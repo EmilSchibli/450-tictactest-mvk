@@ -22,7 +22,7 @@ Tests ausführen:
 
 Board-Hilfe: `X` = Kreuz, `O` = Kreis, `.` = leer (Index 0–8)
 
-### 1. DummyTest – `dummyJunitExample`
+### 1. `givenTrue_whenJunitAssertTrue_thenPasses`
 
 | | |
 |---|---|
@@ -30,7 +30,7 @@ Board-Hilfe: `X` = Kreuz, `O` = Kreis, `.` = leer (Index 0–8)
 | **WHEN** | `assertTrue(true)` (JUnit) |
 | **THEN** | Assertion ist erfolgreich |
 
-### 2. DummyTest – `dummyAssertJExample`
+### 2. `givenTrue_whenAssertJAssertTrue_thenPasses`
 
 | | |
 |---|---|
@@ -38,7 +38,7 @@ Board-Hilfe: `X` = Kreuz, `O` = Kreis, `.` = leer (Index 0–8)
 | **WHEN** | `assertThat(true).isTrue()` (AssertJ) |
 | **THEN** | Assertion ist erfolgreich |
 
-### 3. `isWin_detectsWinningTopRow`
+### 3. `givenTopRowWin_whenIsWinCross_thenTrue`
 
 | | |
 |---|---|
@@ -46,7 +46,7 @@ Board-Hilfe: `X` = Kreuz, `O` = Kreis, `.` = leer (Index 0–8)
 | **WHEN** | `isWin(board, CROSS)` |
 | **THEN** | `true` |
 
-### 4. `isWin_detectsWinningMiddleColumn`
+### 4. `givenMiddleColumnWin_whenIsWinCross_thenTrue`
 
 | | |
 |---|---|
@@ -54,7 +54,7 @@ Board-Hilfe: `X` = Kreuz, `O` = Kreis, `.` = leer (Index 0–8)
 | **WHEN** | `isWin(board, CROSS)` |
 | **THEN** | `true` |
 
-### 5. `isWin_detectsWinningMainDiagonal`
+### 5. `givenMainDiagonalWin_whenIsWinCross_thenTrue`
 
 | | |
 |---|---|
@@ -62,7 +62,7 @@ Board-Hilfe: `X` = Kreuz, `O` = Kreis, `.` = leer (Index 0–8)
 | **WHEN** | `isWin(board, CROSS)` |
 | **THEN** | `true` |
 
-### 6. `isWin_returnsFalseWhenNoThreeInALine`
+### 6. `givenNoWinner_whenIsWinBoth_thenFalse`
 
 | | |
 |---|---|
@@ -70,7 +70,7 @@ Board-Hilfe: `X` = Kreuz, `O` = Kreis, `.` = leer (Index 0–8)
 | **WHEN** | `isWin(board, CROSS)` und `isWin(board, CIRCLE)` |
 | **THEN** | beide `false` |
 
-### 7. `isWin_returnsFalseForWrongColorDespiteWinningLine`
+### 7. `givenCircleTopRow_whenIsWin_thenCrossFalseCircleTrue`
 
 | | |
 |---|---|

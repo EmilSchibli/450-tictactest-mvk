@@ -8,12 +8,12 @@ import org.junit.jupiter.api.Test;
 class DummyTest implements WithAssertions {
 
 	@Test
-	void dummyJunitExample() {
+	void givenTrue_whenJunitAssertTrue_thenPasses() {
 		assertTrue(true);
 	}
 
 	@Test
-	void dummyAssertJExample() {
+	void givenTrue_whenAssertJAssertTrue_thenPasses() {
 		assertThat(true).isTrue();
 	}
 }
