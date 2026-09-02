@@ -22,6 +22,8 @@ Tests ausführen:
 
 Board-Hilfe: `X` = Kreuz, `O` = Kreis, `.` = leer (Index 0–8)
 
+Fixtures: `BoardFixtures` (Test-Boards) · Helper: `BoardTestHelper.toBoard()` / `isWin()`
+
 ### 1. `givenTrue_whenJunitAssertTrue_thenPasses`
 
 | | |
