@@ -1,20 +1,16 @@
-# Test Documentation – TicTacToe (M450)
+# TicTacToe – Testdokumentation
 
-Repository: [450-tictactest-mvk](https://github.com/EmilSchibli/450-tictactest-mvk)
+**Repo:** https://github.com/EmilSchibli/450-tictactest-mvk  
+**Branch:** `add-junit-tests`  
+**Framework:** JUnit 5 + AssertJ
 
-Test framework: **JUnit 5** with **AssertJ** (`WithAssertions`)
+## Test-Code auf GitHub
 
-Test location: `src/test/java/ch/bbw/m450/tictactoe/`
+- [DummyTest.java](https://github.com/EmilSchibli/450-tictactest-mvk/blob/add-junit-tests/src/test/java/ch/bbw/m450/tictactoe/DummyTest.java)
+- [TicTacToeMainTest.java](https://github.com/EmilSchibli/450-tictactest-mvk/blob/add-junit-tests/src/test/java/ch/bbw/m450/tictactoe/TicTacToeMainTest.java)
+- [BoardTestHelper.java](https://github.com/EmilSchibli/450-tictactest-mvk/blob/add-junit-tests/src/test/java/ch/bbw/m450/tictactoe/BoardTestHelper.java)
 
-## Test Code on GitHub
-
-| File | Description | Link |
-|------|-------------|------|
-| `DummyTest.java` | Dummy AssertJ smoke test | [View on GitHub](https://github.com/EmilSchibli/450-tictactest-mvk/blob/add-junit-tests/src/test/java/ch/bbw/m450/tictactoe/DummyTest.java) |
-| `TicTacToeMainTest.java` | Five tests for `TicTacToeMain.isWin` | [View on GitHub](https://github.com/EmilSchibli/450-tictactest-mvk/blob/add-junit-tests/src/test/java/ch/bbw/m450/tictactoe/TicTacToeMainTest.java) |
-| `BoardTestHelper.java` | Test helper `toBoard(String)` | [View on GitHub](https://github.com/EmilSchibli/450-tictactest-mvk/blob/add-junit-tests/src/test/java/ch/bbw/m450/tictactoe/BoardTestHelper.java) |
-
-Run all tests:
+Tests ausführen:
 
 ```bat
 .\gradlew.bat test
@@ -22,104 +18,62 @@ Run all tests:
 
 ---
 
-## Test Results (Screenshots)
+## Tests (GIVEN – WHEN – THEN)
 
-### All tests passing
+Board-Hilfe: `X` = Kreuz, `O` = Kreis, `.` = leer (Index 0–8)
 
-![All tests passing](screenshots/tests-pass.png)
+### 1. DummyTest – `dummyJunitExample`
 
-Terminal output: [test-run-pass.txt](screenshots/test-run-pass.txt)
+| | |
+|---|---|
+| **GIVEN** | `true` |
+| **WHEN** | `assertTrue(true)` (JUnit) |
+| **THEN** | Assertion ist erfolgreich |
 
-### One test intentionally failing
+### 2. DummyTest – `dummyAssertJExample`
 
-For demonstration, `isWin_detectsWinningTopRow()` was temporarily changed to expect `false` instead of `true`.
+| | |
+|---|---|
+| **GIVEN** | `true` |
+| **WHEN** | `assertThat(true).isTrue()` (AssertJ) |
+| **THEN** | Assertion ist erfolgreich |
 
-![One test failing](screenshots/tests-fail.png)
+### 3. `isWin_detectsWinningTopRow`
 
-Terminal output: [test-run-fail.txt](screenshots/test-run-fail.txt)
+| | |
+|---|---|
+| **GIVEN** | Board `XXX......` (obere Reihe gewinnt) |
+| **WHEN** | `isWin(board, CROSS)` |
+| **THEN** | `true` |
 
-The test was restored afterwards; the suite passes again.
+### 4. `isWin_detectsWinningMiddleColumn`
 
----
+| | |
+|---|---|
+| **GIVEN** | Board `.X..X..X.` (mittlere Spalte) |
+| **WHEN** | `isWin(board, CROSS)` |
+| **THEN** | `true` |
 
-## Tests in GIVEN – WHEN – THEN
+### 5. `isWin_detectsWinningMainDiagonal`
 
-Board layout reference (indices 0–8):
+| | |
+|---|---|
+| **GIVEN** | Board `X...X...X` (Hauptdiagonale) |
+| **WHEN** | `isWin(board, CROSS)` |
+| **THEN** | `true` |
 
-```
- 0 | 1 | 2
----+---+---
- 3 | 4 | 5
----+---+---
- 6 | 7 | 8
-```
+### 6. `isWin_returnsFalseWhenNoThreeInALine`
 
-In `toBoard(String)`, `X` = cross, `O` = circle, `.` = empty.
+| | |
+|---|---|
+| **GIVEN** | Board `XOX.OX...` (kein Gewinner) |
+| **WHEN** | `isWin(board, CROSS)` und `isWin(board, CIRCLE)` |
+| **THEN** | beide `false` |
 
----
+### 7. `isWin_returnsFalseForWrongColorDespiteWinningLine`
 
-### 1. DummyTest – `dummyAssertJExample`
-
-**GIVEN** the boolean value `true`
-
-**WHEN** AssertJ checks `assertThat(true).isTrue()`
-
-**THEN** the assertion passes and confirms the test setup works
-
----
-
-### 2. TicTacToeMainTest – `isWin_detectsWinningTopRow`
-
-**GIVEN** a board with three crosses in the top row (`XXX......`)
-
-**WHEN** `TicTacToeMain.isWin(board, Stone.CROSS)` is called
-
-**THEN** the method returns `true`
-
----
-
-### 3. TicTacToeMainTest – `isWin_detectsWinningMiddleColumn`
-
-**GIVEN** a board with three crosses in the middle column (`.X..X..X.`)
-
-**WHEN** `TicTacToeMain.isWin(board, Stone.CROSS)` is called
-
-**THEN** the method returns `true`
-
----
-
-### 4. TicTacToeMainTest – `isWin_detectsWinningMainDiagonal`
-
-**GIVEN** a board with three crosses on the main diagonal (`X...X...X`)
-
-**WHEN** `TicTacToeMain.isWin(board, Stone.CROSS)` is called
-
-**THEN** the method returns `true`
-
----
-
-### 5. TicTacToeMainTest – `isWin_returnsFalseWhenNoThreeInALine`
-
-**GIVEN** a partially filled board with no three-in-a-row for either player (`XOX.OX...`)
-
-**WHEN** `TicTacToeMain.isWin` is called for `Stone.CROSS` and `Stone.CIRCLE`
-
-**THEN** both calls return `false`
-
----
-
-### 6. TicTacToeMainTest – `isWin_returnsFalseForWrongColorDespiteWinningLine`
-
-**GIVEN** a board where circles win the top row (`OOO......`)
-
-**WHEN** `TicTacToeMain.isWin(board, Stone.CROSS)` is called
-
-**THEN** the method returns `false` (wrong color), while `isWin(board, Stone.CIRCLE)` returns `true`
-
----
-
-## Notes
-
-- Test methods use package-private visibility (no `public` modifier).
-- AssertJ is used via `implements WithAssertions`.
-- Game logic in `src/main` was not modified; only test code was added under `src/test`.
+| | |
+|---|---|
+| **GIVEN** | Board `OOO......` (Kreise gewinnen oben) |
+| **WHEN** | `isWin(board, CROSS)` und `isWin(board, CIRCLE)` |
+| **THEN** | `false` bzw. `true` |
