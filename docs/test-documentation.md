@@ -10,9 +10,9 @@ Test location: `src/test/java/ch/bbw/m450/tictactoe/`
 
 | File | Description | Link |
 |------|-------------|------|
-| `DummyTest.java` | Dummy AssertJ smoke test | [View on GitHub](https://github.com/EmilSchibli/450-tictactest-mvk/blob/main/src/test/java/ch/bbw/m450/tictactoe/DummyTest.java) |
-| `TicTacToeMainTest.java` | Five tests for `TicTacToeMain.isWin` | [View on GitHub](https://github.com/EmilSchibli/450-tictactest-mvk/blob/main/src/test/java/ch/bbw/m450/tictactoe/TicTacToeMainTest.java) |
-| `BoardTestHelper.java` | Test helper `toBoard(String)` | [View on GitHub](https://github.com/EmilSchibli/450-tictactest-mvk/blob/main/src/test/java/ch/bbw/m450/tictactoe/BoardTestHelper.java) |
+| `DummyTest.java` | Dummy AssertJ smoke test | [View on GitHub](https://github.com/EmilSchibli/450-tictactest-mvk/blob/add-junit-tests/src/test/java/ch/bbw/m450/tictactoe/DummyTest.java) |
+| `TicTacToeMainTest.java` | Five tests for `TicTacToeMain.isWin` | [View on GitHub](https://github.com/EmilSchibli/450-tictactest-mvk/blob/add-junit-tests/src/test/java/ch/bbw/m450/tictactoe/TicTacToeMainTest.java) |
+| `BoardTestHelper.java` | Test helper `toBoard(String)` | [View on GitHub](https://github.com/EmilSchibli/450-tictactest-mvk/blob/add-junit-tests/src/test/java/ch/bbw/m450/tictactoe/BoardTestHelper.java) |
 
 Run all tests:
 
