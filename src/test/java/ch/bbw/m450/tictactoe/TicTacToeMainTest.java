@@ -32,7 +32,7 @@ class TicTacToeMainTest implements WithAssertions {
 
 	@ParameterizedTest
 	@MethodSource("boards")
-	void isWin(String layout, Stone color, boolean expected) {
+	void givenBoard_whenIsWin_thenExpected(String layout, Stone color, boolean expected) {
 		assertThat(isWin(layout, color)).isEqualTo(expected);
 	}
 }
