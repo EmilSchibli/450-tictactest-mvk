@@ -19,4 +19,8 @@ class BoardTestHelper {
 		}
 		return board;
 	}
+
+	static boolean isWin(String layout, Stone color) {
+		return TicTacToeMain.isWin(toBoard(layout), color);
+	}
 }

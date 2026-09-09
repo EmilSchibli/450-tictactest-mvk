@@ -1,48 +1,38 @@
 package ch.bbw.m450.tictactoe;
 
-import static ch.bbw.m450.tictactoe.BoardTestHelper.toBoard;
+import static ch.bbw.m450.tictactoe.BoardFixtures.DIAG_X;
+import static ch.bbw.m450.tictactoe.BoardFixtures.MID_COL_X;
+import static ch.bbw.m450.tictactoe.BoardFixtures.NO_WIN;
+import static ch.bbw.m450.tictactoe.BoardFixtures.TOP_ROW_O;
+import static ch.bbw.m450.tictactoe.BoardFixtures.TOP_ROW_X;
+import static ch.bbw.m450.tictactoe.BoardTestHelper.isWin;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
+
+import java.util.stream.Stream;
 
 import org.assertj.core.api.WithAssertions;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import ch.bbw.m450.tictactoe.TicTacToePlayer.Stone;
 
 class TicTacToeMainTest implements WithAssertions {
 
-	@Test
-	void givenTopRowWin_whenIsWinCross_thenTrue() {
-		var board = toBoard("XXX......");
-
-		assertThat(TicTacToeMain.isWin(board, Stone.CROSS)).isTrue();
+	static Stream<Arguments> boards() {
+		return Stream.of(
+				arguments(TOP_ROW_X, Stone.CROSS, true),
+				arguments(MID_COL_X, Stone.CROSS, true),
+				arguments(DIAG_X, Stone.CROSS, true),
+				arguments(TOP_ROW_O, Stone.CIRCLE, true),
+				arguments(NO_WIN, Stone.CROSS, false),
+				arguments(NO_WIN, Stone.CIRCLE, false),
+				arguments(TOP_ROW_O, Stone.CROSS, false));
 	}
 
-	@Test
-	void givenMiddleColumnWin_whenIsWinCross_thenTrue() {
-		var board = toBoard(".X..X..X.");
-
-		assertThat(TicTacToeMain.isWin(board, Stone.CROSS)).isTrue();
-	}
-
-	@Test
-	void givenMainDiagonalWin_whenIsWinCross_thenTrue() {
-		var board = toBoard("X...X...X");
-
-		assertThat(TicTacToeMain.isWin(board, Stone.CROSS)).isTrue();
-	}
-
-	@Test
-	void givenNoWinner_whenIsWinBoth_thenFalse() {
-		var board = toBoard("XOX.OX...");
-
-		assertThat(TicTacToeMain.isWin(board, Stone.CROSS)).isFalse();
-		assertThat(TicTacToeMain.isWin(board, Stone.CIRCLE)).isFalse();
-	}
-
-	@Test
-	void givenCircleTopRow_whenIsWin_thenCrossFalseCircleTrue() {
-		var board = toBoard("OOO......");
-
-		assertThat(TicTacToeMain.isWin(board, Stone.CROSS)).isFalse();
-		assertThat(TicTacToeMain.isWin(board, Stone.CIRCLE)).isTrue();
+	@ParameterizedTest
+	@MethodSource("boards")
+	void givenBoard_whenIsWin_thenExpected(String layout, Stone color, boolean expected) {
+		assertThat(isWin(layout, color)).isEqualTo(expected);
 	}
 }
