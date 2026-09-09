@@ -1,0 +1,28 @@
+{
+	"name": "tictactest-m450",
+	"build": {
+		"dockerfile": "Dockerfile"
+	},
+	"remoteUser": "dev",
+	"mounts": [
+		"source=tictactest-m450-gradle,target=/home/dev/.gradle,type=volume"
+	],
+	"postCreateCommand": "./gradlew --version && ./gradlew -q javaToolchains",
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"redhat.java",
+				"vscjava.vscode-java-debug",
+				"vscjava.vscode-java-test",
+				"vscjava.vscode-java-dependency",
+				"vscjava.vscode-gradle"
+			],
+			"settings": {
+				"java.jdt.ls.java.home": "/usr/lib/jvm/zulu25",
+				"java.import.gradle.java.home": "/usr/lib/jvm/zulu25",
+				"java.configuration.updateBuildConfiguration": "automatic",
+				"terminal.integrated.defaultProfile.linux": "bash"
+			}
+		}
+	}
+}
