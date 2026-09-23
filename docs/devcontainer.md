@@ -20,3 +20,13 @@ Ohne Docker braucht man lokal Java 25:
 ```
 
 Unter Windows: `.\gradlew.bat test`
+
+## Image von Hand bauen
+
+Mit Docker:
+
+```
+docker build -t ghcr.io/emilschibli/tictactest-m450:latest .devcontainer
+```
+
+Ohne Docker: in GitHub unter Actions den Workflow `Devcontainer` mit "Run workflow" starten. Er baut das Image, taggt es mit `:latest` und prüft Java, Gradle und den Benutzer `dev`. Der Button erscheint erst, wenn der Workflow auf `main` ist.
