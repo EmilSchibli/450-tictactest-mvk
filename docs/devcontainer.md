@@ -70,3 +70,21 @@ Das verwendete Image steht nur an einer Stelle: `image` in `.devcontainer/devcon
 - `ci.yml` liest das Image im Job `Read image` aus `devcontainer.json` und startet damit Build, Tests und PIT.
 
 So laufen CI und lokale Umgebung immer mit dem gleichen Image. Wer das Dockerfile lokal testen will, baut es wie oben von Hand.
+
+## Automatischer Update-PR
+
+Nach jeder Freigabe auf `main` öffnet der Job `Create update PR` einen Pull Request auf dem Branch `update-devcontainer-image`, der `image` in `devcontainer.json` auf die neue Version setzt. Danach startet er `ci.yml` auf diesem Branch, weil PRs vom `GITHUB_TOKEN` keine CI auslösen.
+
+Erst wenn dieser PR gemergt ist, verwenden CI und lokale DevContainer die neue Version. Beim nächsten Öffnen fragt VS Code bzw. Cursor nach einem Rebuild und lädt dann das neue Image.
+
+Dafür muss in den Repo-Einstellungen unter Actions > General "Allow GitHub Actions to create and approve pull requests" aktiv sein.
+
+Erster Durchlauf: wenn `v1.0.0` schon freigegeben ist, bevor es den Job gab, den Workflow `Devcontainer` auf `main` manuell starten. Er baut nichts neu und öffnet nur den Update-PR.
+
+## Gesamter Ablauf
+
+1. Dockerfile ändern und `.devcontainer/VERSION` erhöhen, PR öffnen
+2. PR-Check baut und testet das Image, pusht aber nichts
+3. Merge auf `main`: Image wird als `vX.Y.Z` und `latest` gepusht (Freigabe)
+4. Automatischer PR setzt `vX.Y.Z` in `devcontainer.json`, CI läuft mit dem neuen Image
+5. Merge des Update-PRs: CI und lokale DevContainer verwenden ab jetzt `vX.Y.Z`
