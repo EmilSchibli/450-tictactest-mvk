@@ -82,13 +82,12 @@ jobs:
           IMAGE: ${{ needs.build.outputs.image }}
         run: |
           set -euo pipefail
-          for f in .github/workflows/ci.yml .devcontainer/devcontainer.json; do
-            sed -i -E "s#ghcr\.io/[a-z0-9._-]+/tictactest-m450:[^[:space:]\"]+#${IMAGE}#g" "$f"
-            if ! grep -qF "$IMAGE" "$f"; then
-              echo "::error file=$f::no tictactest-m450 image reference found"
-              exit 1
-            fi
-          done
+          f=.github/workflows/ci.yml
+          sed -i -E "s#ghcr\.io/[a-z0-9._-]+/tictactest-m450:[^[:space:]]+#${IMAGE}#g" "$f"
+          if ! grep -qF "$IMAGE" "$f"; then
+            echo "::error file=$f::no tictactest-m450 image reference found"
+            exit 1
+          fi
           git diff
 
       - name: Create pull request
@@ -101,7 +100,7 @@ jobs:
           title: update devcontainer image to ${{ needs.build.outputs.image }}
           body: |
             - neues Image: `${{ needs.build.outputs.image }}`
-            - aktualisiert `.github/workflows/ci.yml` und `.devcontainer/devcontainer.json`
+            - aktualisiert das CI-Image in `.github/workflows/ci.yml`
 
       - name: Run CI on update branch
         if: steps.pr.outputs.pull-request-operation == 'created' || steps.pr.outputs.pull-request-operation == 'updated'
