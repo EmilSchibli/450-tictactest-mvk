@@ -30,3 +30,14 @@ docker build -t ghcr.io/emilschibli/tictactest-m450:latest .devcontainer
 ```
 
 Ohne Docker: in GitHub unter Actions den Workflow `Devcontainer` mit "Run workflow" starten. Er baut das Image, taggt es mit `:latest` und prüft Java, Gradle und den Benutzer `dev`. Der Button erscheint erst, wenn der Workflow auf `main` ist.
+
+## Image in die GitHub Container Registry laden
+
+Mit Docker (Token mit `write:packages`):
+
+```
+echo $CR_PAT | docker login ghcr.io -u EmilSchibli --password-stdin
+docker push ghcr.io/emilschibli/tictactest-m450:latest
+```
+
+Ohne Docker: der Workflow `Devcontainer` pusht das Image nach der Prüfung mit dem `GITHUB_TOKEN` nach `ghcr.io/emilschibli/tictactest-m450:latest`.
