@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Coverage History</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { max-width: 900px; margin: 2em auto; font-family: sans-serif; }
+  </style>
+</head>
+<body>
+  <canvas id="instruction"></canvas>
+  <canvas id="branch"></canvas>
+  <script>
+    function chart(id, label, commits, values) {
+      new Chart(document.getElementById(id), {
+        type: 'line',
+        data: {
+          labels: commits,
+          datasets: [{
+            label: label,
+            data: values,
+            fill: true,
+            tension: 0.4,
+            borderColor: 'rgb(80, 230, 80)',
+            backgroundColor: 'rgba(80, 230, 80, 0.4)'
+          }]
+        },
+        options: {
+          scales: {
+            x: { title: { display: true, text: 'commit' } },
+            y: { title: { display: true, text: '%' } }
+          }
+        }
+      });
+    }
+
+    fetch('history.csv').then(r => r.text()).then(text => {
+      const rows = text.trim().split('\n').slice(1).map(l => l.split(','));
+      const commits = rows.map(r => r[1]);
+      chart('instruction', 'Instruction coverage', commits, rows.map(r => +r[2]));
+      chart('branch', 'Branch coverage', commits, rows.map(r => +r[3]));
+    });
+  </script>
+</body>
+</html>
