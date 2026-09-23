@@ -1,10 +1,23 @@
 name: Devcontainer
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - .devcontainer/Dockerfile
+      - .devcontainer/VERSION
+  pull_request:
+    paths:
+      - .devcontainer/**
+      - .github/workflows/devcontainer.yml
   workflow_dispatch:
 
 permissions:
   contents: read
+
+concurrency:
+  group: devcontainer-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   image:
@@ -16,42 +29,103 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
 
       - name: Image name
         id: vars
+        env:
+          RELEASE: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
         run: |
+          version="$(cat .devcontainer/VERSION)"
+          if ! grep -Eqx '[0-9]+\.[0-9]+\.[0-9]+' <<< "$version"; then
+            echo "::error file=.devcontainer/VERSION::'${version}' is not a x.y.z version"
+            exit 1
+          fi
           owner="$(echo "$GITHUB_REPOSITORY_OWNER" | tr '[:upper:]' '[:lower:]')"
-          echo "image=ghcr.io/${owner}/tictactest-m450:latest" >> "$GITHUB_OUTPUT"
+          name="ghcr.io/${owner}/tictactest-m450"
+          {
+            echo "version=${version}"
+            echo "name=${name}"
+            echo "image=${name}:v${version}"
+            echo "release=${RELEASE}"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
 
-      - name: Build
-        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
-        with:
-          context: .devcontainer
-          file: .devcontainer/Dockerfile
-          load: true
-          tags: ${{ steps.vars.outputs.image }}
-          labels: |
-            org.opencontainers.image.source=https://github.com/${{ github.repository }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Check image
-        env:
-          IMAGE: ${{ steps.vars.outputs.image }}
-        run: |
-          docker run --rm "$IMAGE" sh -c 'java -version && gradle --version && test "$(id -u dev):$(id -g dev)" = 1000:1000'
-
       - name: Log in to GHCR
+        if: steps.vars.outputs.release == 'true'
         uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Push
+      - name: Check version
+        id: check
         env:
           IMAGE: ${{ steps.vars.outputs.image }}
-        run: docker push "$IMAGE"
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if out="$(docker buildx imagetools inspect "$IMAGE" 2>&1)"; then
+            released=true
+          elif grep -q 'not found' <<< "$out"; then
+            released=false
+          else
+            echo "$out"
+            exit 1
+          fi
+          echo "released=${released}" >> "$GITHUB_OUTPUT"
+          if [ "$released" = false ]; then
+            exit 0
+          fi
+          case "$GITHUB_EVENT_NAME" in
+            pull_request)
+              changed="$(git diff --name-only "$BASE_SHA" HEAD -- .devcontainer/Dockerfile)"
+              if [ -n "$changed" ]; then
+                echo "::error file=.devcontainer/VERSION::Dockerfile changed but ${IMAGE} is already released, bump .devcontainer/VERSION"
+                exit 1
+              fi
+              ;;
+            push)
+              echo "::error file=.devcontainer/VERSION::${IMAGE} is already released, bump .devcontainer/VERSION"
+              exit 1
+              ;;
+            *)
+              echo "::notice::${IMAGE} is already released"
+              ;;
+          esac
+
+      - name: Build
+        if: steps.vars.outputs.release != 'true' || steps.check.outputs.released == 'false'
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
+        with:
+          context: .devcontainer
+          file: .devcontainer/Dockerfile
+          load: true
+          tags: |
+            ${{ steps.vars.outputs.image }}
+            ${{ steps.vars.outputs.name }}:latest
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.version=${{ steps.vars.outputs.version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Check image
+        if: steps.vars.outputs.release != 'true' || steps.check.outputs.released == 'false'
+        env:
+          IMAGE: ${{ steps.vars.outputs.image }}
+        run: |
+          docker run --rm "$IMAGE" sh -c 'java -version && gradle --version && test "$(id -u dev):$(id -g dev)" = 1000:1000'
+          docker run --rm -v "$PWD:/workspace" -w /workspace "$IMAGE" ./gradlew test --no-daemon
+
+      - name: Push
+        if: steps.vars.outputs.release == 'true' && steps.check.outputs.released == 'false'
+        env:
+          IMAGE: ${{ steps.vars.outputs.image }}
+          NAME: ${{ steps.vars.outputs.name }}
+        run: |
+          docker push "$IMAGE"
+          docker push "${NAME}:latest"
