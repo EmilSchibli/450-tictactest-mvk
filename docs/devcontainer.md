@@ -40,8 +40,24 @@ echo $CR_PAT | docker login ghcr.io -u EmilSchibli --password-stdin
 docker push ghcr.io/emilschibli/tictactest-m450:latest
 ```
 
-Ohne Docker: der Workflow `Devcontainer` pusht das Image nach der Prüfung mit dem `GITHUB_TOKEN` nach `ghcr.io/emilschibli/tictactest-m450:latest`.
+Ohne Docker: der Workflow `Devcontainer` pusht das Image nach der Prüfung mit dem `GITHUB_TOKEN` in die Registry (ab der Versionierung nur noch von `main`, siehe unten).
 
 ## CI mit dem Image aus der Registry
 
 `.github/workflows/ci.yml` baut kein Image mehr. Build, Tests und PIT laufen im Image aus der GitHub Container Registry. Das Image ist mit einem festen Tag angegeben und nicht mit `:latest`, damit ein neuer Push die CI nicht unbemerkt verändert.
+
+## Versionierung und Freigabe
+
+Die Version steht in `.devcontainer/VERSION` im Format `MAJOR.MINOR.PATCH`. Das Image bekommt den Tag `vMAJOR.MINOR.PATCH`.
+
+- MAJOR: anderes Base-Image oder andere Java-Version
+- MINOR: neues Tool im Image
+- PATCH: kleine Änderungen, z.B. Updates
+
+Ablauf im Workflow `.github/workflows/devcontainer.yml`:
+
+- Pull Request: das Image wird gebaut und geprüft (Java, Gradle, UID:GID, `./gradlew test`), aber nicht gepusht. Wenn das Dockerfile geändert wurde und die Version schon in der Registry ist, schlägt der Check fehl.
+- Push auf `main`: das geprüfte Image wird als `vX.Y.Z` und `latest` gepusht. Das ist die Freigabe. Gibt es die Version schon, schlägt der Workflow fehl, eine freigegebene Version wird nie überschrieben.
+- Manuell auf `main` starten: ist die Version schon freigegeben, wird nichts neu gebaut.
+
+Branch-Builds kommen nie in die Registry. CI und DevContainer verwenden nur freigegebene `vX.Y.Z` Tags.
