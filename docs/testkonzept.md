@@ -27,6 +27,12 @@ CI: GitHub Actions (siehe Abschnitt 8)
 - Gewinn auf der Hauptdiagonale (X)
 - Board ohne Gewinner (weder X noch O)
 - Falsche Farbe: O hat gewonnen, X nicht
+- alle 8 Linien, leeres Board, volles Unentschieden-Board, fast volle Reihe
+- `toString` (X, O und leere Felder)
+- Spielschleife `play(...)`: Sieg X, Sieg O, Unentschieden, ungültige Züge, gleicher Spieler
+- `GreedyPlayer` (erstes freies Feld, volles Board)
+- `HumanPlayer` mit `System.setIn` (Zahl und ungültige Eingabe)
+- `Stone.opponent()`
 
 Board-Darstellung in den Tests: 9 Zeichen, Index 0 bis 8.
 
@@ -42,12 +48,8 @@ Board-Darstellung in den Tests: 9 Zeichen, Index 0 bis 8.
 
 ### Wird nicht getestet (noch)
 
-- Spielschleife `play(...)`
-- `HumanPlayer` (Eingabe über Tastatur / stdin)
-- `GreedyPlayer` und ein späterer Perfect Player
-- `toString` (Ausgabe auf der Konsole)
-- ungültige Züge (Feld schon belegt, Index ausserhalb 0–8)
-- Unentschieden über 9 Runden
+- `main(...)`: startet ein Spiel mit `HumanPlayer`, der pro Zug einen neuen `Scanner` auf `System.in` macht. Mehrere Eingaben hintereinander gehen so nicht sauber.
+- ein späterer Perfect Player
 
 Kein Mocking. Mockito ist in der Aufgabe nicht erlaubt.
 
@@ -61,10 +63,11 @@ Alles sind **Unit Tests**. Es wird eine Methode isoliert geprüft, nicht das gan
 | --- | --- | --- |
 | Einfacher `@Test` | `DummyTest` | Prüfen, ob JUnit und AssertJ überhaupt laufen |
 | Parameterized Test | `TicTacToeMainTest` | Viele Boards, eine Testmethode |
+| `@Test` / Parameterized | `TicTacToeMainTest`, `GreedyPlayerTest`, `HumanPlayerTest`, `StoneTest` | `play`, `toString`, Spieler, `Stone` |
 
-Parameterized heisst: eine Methode, mehrere Datensätze. Die Daten kommen aus `boards()` über `@MethodSource`.
+Parameterized heisst: eine Methode, mehrere Datensätze. Die Daten kommen aus `boards()` über `@MethodSource` oder direkt aus `@CsvSource` / `@ValueSource`.
 
-Integration Tests (z.B. zwei Spieler + ganze `play`-Schleife) gibt es noch nicht.
+Die `play`-Tests laufen ein ganzes Spiel mit zwei Spielern durch. Die Spieler sind kleine Lambdas mit festen Zügen (kein Mocking).
 
 ---
 
@@ -77,9 +80,10 @@ Integration Tests (z.B. zwei Spieler + ganze `play`-Schleife) gibt es noch nicht
 | AssertJ | 3.27.7 | Lesbare Assertions (`assertThat(...).isEqualTo(...)`) |
 | Gradle | Wrapper im Repo | `assemble` und `test` |
 | GitHub Actions | `.github/workflows/ci.yml` | Automatisch bauen und testen |
+| JaCoCo | Gradle-Plugin | Code Coverage |
+| PIT | 1.30.0 (Gradle-Plugin 1.19.0, junit5-Plugin 1.2.3) | Mutation Testing (siehe Abschnitt 10) |
 
-Kein Mockito.  
-JaCoCo und PIT stehen in der Aufgabe, sind aber noch nicht eingerichtet (siehe Abschnitt 9).
+Kein Mockito.
 
 Tests lokal:
 
@@ -91,7 +95,7 @@ Tests lokal:
 
 ## 5. Aufbau der Tests
 
-Vier Dateien unter `src/test/java/ch/bbw/m450/tictactoe/`:
+Dateien unter `src/test/java/ch/bbw/m450/tictactoe/`:
 
 **`DummyTest`**  
 Zwei Mini-Tests. Einmal JUnit `assertTrue(true)`, einmal AssertJ `assertThat(true).isTrue()`. Nur zum Ausprobieren, nicht fürs Spiel.
@@ -104,6 +108,7 @@ Feste Boards als Strings:
 - `DIAG_X` = `X...X...X`
 - `NO_WIN` = `XOX.OX...`
 - `TOP_ROW_O` = `OOO......`
+- dazu `EMPTY`, `MID_ROW_O`, `BOTTOM_ROW_X`, `LEFT_COL_O`, `RIGHT_COL_O`, `ANTI_DIAG_O`, `FULL_DRAW` (siehe Abschnitt 7)
 
 **`BoardTestHelper`**  
 - `toBoard(String)` wandelt 9 Zeichen in `Stone[]` um
@@ -111,7 +116,10 @@ Feste Boards als Strings:
 Falsche Länge oder unbekannte Zeichen werfen eine Exception.
 
 **`TicTacToeMainTest`**  
-Ein Parameterized Test. Nimmt Layout, Farbe und erwartetes Ergebnis aus `boards()`.
+Parameterized Test für `isWin` (Layout, Farbe und erwartetes Ergebnis aus `boards()`). Dazu Tests für `toString` und `play`.
+
+**`GreedyPlayerTest`**, **`HumanPlayerTest`**, **`StoneTest`**  
+Tests für die zwei Spieler und `Stone.opponent()`.
 
 So bleibt das Board-Layout an einem Ort. Die eigentliche Logik bleibt in `TicTacToeMain`.
 
@@ -156,6 +164,16 @@ Quelle: `BoardFixtures` und `TicTacToeMainTest.boards()`. Nur diese Boards, kein
 | 5 | `NO_WIN` | `XOX.OX...` | CROSS | false | kein Gewinn für X |
 | 6 | `NO_WIN` | `XOX.OX...` | CIRCLE | false | kein Gewinn für O |
 | 7 | `TOP_ROW_O` | `OOO......` | CROSS | false | O hat gewonnen, X nicht |
+| 8 | `MID_ROW_O` | `...OOO...` | CIRCLE | true | O gewinnt mittlere Reihe |
+| 9 | `BOTTOM_ROW_X` | `......XXX` | CROSS | true | X gewinnt unten |
+| 10 | `LEFT_COL_O` | `O..O..O..` | CIRCLE | true | O gewinnt linke Spalte |
+| 11 | `RIGHT_COL_O` | `..O..O..O` | CIRCLE | true | O gewinnt rechte Spalte |
+| 12 | `ANTI_DIAG_O` | `..O.O.O..` | CIRCLE | true | O gewinnt Gegendiagonale |
+| 13 | `EMPTY` | `.........` | CROSS | false | leeres Board |
+| 14 | - | `XX.......` | CROSS | false | nur zwei in der Reihe |
+| 15 | - | `......OO.` | CIRCLE | false | nur zwei in der Reihe |
+| 16 | `FULL_DRAW` | `XOXXOOOXX` | CROSS | false | Unentschieden |
+| 17 | `FULL_DRAW` | `XOXXOOOXX` | CIRCLE | false | Unentschieden |
 
 Zu Fall 1 ausführlich:
 
@@ -169,7 +187,7 @@ Zu Fall 5 und 6:
 - **When:** `isWin` einmal mit CROSS, einmal mit CIRCLE
 - **Then:** beide `false`
 
-Was noch fehlt (nicht in den Fixtures): untere Reihe, rechte Spalte, Gegendiagonale, volles Unentschieden-Board. Das kann man später ergänzen.
+Fall 14 und 15 kamen dazu, weil JaCoCo dort einen Branch als nicht getestet angezeigt hat.
 
 ---
 
@@ -193,21 +211,43 @@ Beide Jobs:
 
 Nach den Tests werden die Reports hochgeladen (`build/reports/tests/test/`), auch wenn Tests rot sind (`if: always()`).
 
+Zusätzlich läuft der Job **Mutation tests** (`./gradlew pitest --no-daemon`) parallel zum Test-Job. Der PIT-Report wird als Artefakt `pitest-report` hochgeladen.
+
 Lokal und CI nutzen denselben Gradle-Wrapper. Java-Version ist in `build.gradle` und in der CI gleich (25).
 
 ---
 
 ## 9. Offene Punkte / später
 
-Das gehört zur Aufgabe, ist aber **noch nicht gemacht**. Keine Coverage-Zahlen, weil JaCoCo fehlt.
-
 | Thema | Status | Kurz |
 | --- | --- | --- |
-| JaCoCo, Ziel 90 % Line Coverage | geplant | Plugin fehlt in `build.gradle` |
-| PIT (Mutation Testing) | geplant | noch nicht eingerichtet |
-| HumanPlayer / stdin | geplant | z.B. mit Pioneer; Eingabe ist schwer zu testen |
-| Perfect Player | geplant | `GreedyPlayer` ist da, Tests dafür nicht |
-| Ganze Spielschleife `play` | geplant | wäre eher Integration Test |
+| JaCoCo, Ziel 90 % Line Coverage | erledigt | 93 % Lines, 96.8 % Instructions, 100 % Branches |
+| PIT (Mutation Testing) | erledigt | siehe Abschnitt 10 |
+| HumanPlayer / stdin | erledigt | mit `System.setIn`, ohne Pioneer |
+| Perfect Player | geplant | gibt es noch nicht |
+| Ganze Spielschleife `play` | erledigt | mit Lambda-Spielern |
+| `main(...)` | offen | siehe Abschnitt 2 |
 | Mockito | nicht vorgesehen | Mocking ist nicht erlaubt |
 
-Wenn JaCoCo und PIT drin sind, gehört die Auswertung ins Konzept nachgetragen. Bis dahin gilt: die sieben `isWin`-Fälle und die zwei Dummy-Tests laufen.
+---
+
+## 10. Mutation Testing (PIT)
+
+PIT ändert den Code absichtlich (z.B. `==` zu `!=`, `println` entfernt) und schaut, ob ein Test rot wird. Wird kein Test rot, hat der Mutant "überlebt" und die Tests sind an der Stelle zu schwach.
+
+Lokal:
+
+```bat
+.\gradlew.bat pitest
+```
+
+Report: `build/reports/pitest/index.html` (HTML und XML)
+
+Konfiguration in `build.gradle`: alle Klassen in `ch.bbw.m450.tictactoe.*`, JUnit-5-Plugin, keine Zeitstempel-Ordner.
+
+| Stand | Mutanten | getötet | Mutation Score |
+| --- | --- | --- | --- |
+| vorher (nur `isWin`-Tests) | 57 | 14 | 25 % |
+| nachher | 57 | 57 | 100 % |
+
+Überlebt hatten am Schluss noch: entfernte `println`-Aufrufe in `play` und `HumanPlayer` und eine vertauschte X/O-Bedingung in `toString`. Dafür prüfen die Tests jetzt auch die Konsolenausgabe (`System.setOut`) und `toString` mit nur X bzw. nur O.
