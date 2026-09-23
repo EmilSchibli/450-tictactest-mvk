@@ -30,23 +30,38 @@ jobs:
       - name: Get old history
         run: |
           mkdir -p out
-          git fetch --depth=1 origin gh-pages || true
-          git show origin/gh-pages:coverage-history/history.csv > out/history.csv \
-            || echo "Datum,Commit,Instruction,Branch" > out/history.csv
+          if git ls-remote --exit-code --heads origin gh-pages; then
+            git fetch --depth=1 origin gh-pages
+            git show FETCH_HEAD:coverage-history/history.csv > out/history.csv
+          elif [ $? -eq 2 ]; then
+            echo "Datum,Commit,Instruction,Branch" > out/history.csv
+          else
+            exit 1
+          fi
 
       - name: Add coverage to history
         run: |
           python3 - <<'EOF'
-          import xml.etree.ElementTree as ET, datetime, os
+          import xml.etree.ElementTree as ET, datetime, os, sys
           root = ET.parse("build/reports/jacoco/test/jacocoTestReport.xml").getroot()
           pct = {}
           for c in root.findall("counter"):
               covered, missed = int(c.get("covered")), int(c.get("missed"))
-              pct[c.get("type")] = round(100 * covered / (covered + missed), 1)
-          row = [datetime.date.today().isoformat(), os.environ["GITHUB_SHA"][:7],
-                 str(pct.get("INSTRUCTION", 0)), str(pct.get("BRANCH", 0))]
-          print(",".join(row))
-          open("out/history.csv", "a").write(",".join(row) + "\n")
+              if covered + missed > 0:
+                  pct[c.get("type")] = round(100 * covered / (covered + missed), 1)
+          if "INSTRUCTION" not in pct or "BRANCH" not in pct:
+              sys.exit("INSTRUCTION or BRANCH counter missing in jacoco report")
+          sha = os.environ["GITHUB_SHA"][:7]
+          text = open("out/history.csv").read()
+          if sha in [line.split(",")[1] for line in text.splitlines()[1:] if line]:
+              print(sha, "is already in history.csv")
+          else:
+              if not text.endswith("\n"):
+                  text += "\n"
+              row = [datetime.date.today().isoformat(), sha,
+                     str(pct["INSTRUCTION"]), str(pct["BRANCH"])]
+              print(",".join(row))
+              open("out/history.csv", "w").write(text + ",".join(row) + "\n")
           EOF
           cp docs/coverage-history/index.html out/
 
