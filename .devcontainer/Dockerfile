@@ -1,4 +1,4 @@
-FROM azul/zulu-openjdk:25
+FROM azul/zulu-openjdk:25.0.4.1-25.36
 
 RUN apt-get update \
 	&& apt-get install -y --no-install-recommends \
