@@ -84,8 +84,8 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Test
-        run: ./gradlew test --no-daemon
+      - name: Test and JaCoCo report
+        run: ./gradlew test jacocoTestReport --no-daemon
 
       - name: Upload test reports
         if: always()
@@ -94,3 +94,11 @@ jobs:
           name: test-reports
           path: build/reports/tests/test/
           if-no-files-found: ignore
+
+      - name: Upload JaCoCo coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: build/reports/jacoco/test/html/
+          if-no-files-found: error
