@@ -41,3 +41,7 @@ docker push ghcr.io/emilschibli/tictactest-m450:latest
 ```
 
 Ohne Docker: der Workflow `Devcontainer` pusht das Image nach der Prüfung mit dem `GITHUB_TOKEN` nach `ghcr.io/emilschibli/tictactest-m450:latest`.
+
+## CI mit dem Image aus der Registry
+
+`.github/workflows/ci.yml` baut kein Image mehr. Build, Tests und PIT laufen im Image aus der GitHub Container Registry. Das Image ist mit einem festen Tag angegeben und nicht mit `:latest`, damit ein neuer Push die CI nicht unbemerkt verändert.
