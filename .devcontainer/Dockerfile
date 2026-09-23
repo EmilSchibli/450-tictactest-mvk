@@ -20,6 +20,15 @@ RUN printf '%s\n' \
 		> /usr/local/bin/base64 \
 	&& chmod +x /usr/local/bin/base64
 
+ARG GRADLE_VERSION=9.7.0
+ARG GRADLE_SHA256=84fbba45c7f4c64abc77460e1c00f541e9f960e3c7ed2538f1ede19eacd873ae
+
+RUN curl -fsSLo /tmp/gradle.zip "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip" \
+	&& echo "${GRADLE_SHA256}  /tmp/gradle.zip" | sha256sum -c - \
+	&& unzip -q /tmp/gradle.zip -d /opt \
+	&& ln -s /opt/gradle-${GRADLE_VERSION}/bin/gradle /usr/local/bin/gradle \
+	&& rm /tmp/gradle.zip
+
 ARG USERNAME=dev
 ARG USER_UID=1000
 ARG USER_GID=1000
