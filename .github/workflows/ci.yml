@@ -102,3 +102,30 @@ jobs:
           name: jacoco-report
           path: build/reports/jacoco/test/html/
           if-no-files-found: error
+
+  mutation:
+    name: Mutation tests
+    needs: [image, build]
+    runs-on: ubuntu-24.04
+    container:
+      image: ${{ needs.image.outputs.image }}
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@748248ddd2a24f49513d8f472f81c3a07d4d50e1 # v4.4.4
+
+      - name: PIT mutation tests
+        run: ./gradlew pitest --no-daemon
+
+      - name: Upload PIT report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: pitest-report
+          path: build/reports/pitest/
+          if-no-files-found: error
