@@ -1,0 +1,110 @@
+name: Devcontainer
+
+on:
+  push:
+    paths:
+      - .devcontainer/Dockerfile
+      - .github/workflows/devcontainer.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: devcontainer-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build and push image
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.vars.outputs.image }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Image name
+        id: vars
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          owner="$(echo "$GITHUB_REPOSITORY_OWNER" | tr '[:upper:]' '[:lower:]')"
+          name="ghcr.io/${owner}/tictactest-m450"
+          image="${name}:${GITHUB_SHA::7}"
+          tags="$image"
+          if [ "$GITHUB_REF" = "refs/heads/${DEFAULT_BRANCH}" ]; then
+            tags="${tags},${name}:latest"
+          fi
+          echo "image=${image}" >> "$GITHUB_OUTPUT"
+          echo "tags=${tags}" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+
+      - name: Build and push
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
+        with:
+          context: .devcontainer
+          file: .devcontainer/Dockerfile
+          push: true
+          tags: ${{ steps.vars.outputs.tags }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  update-refs:
+    name: Create update PR
+    needs: build
+    if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ubuntu-24.04
+    permissions:
+      actions: write
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Update image references
+        env:
+          IMAGE: ${{ needs.build.outputs.image }}
+        run: |
+          set -euo pipefail
+          for f in .github/workflows/ci.yml .devcontainer/devcontainer.json; do
+            sed -i -E "s#ghcr\.io/[a-z0-9._-]+/tictactest-m450:[^[:space:]\"]+#${IMAGE}#g" "$f"
+            if ! grep -qF "$IMAGE" "$f"; then
+              echo "::error file=$f::no tictactest-m450 image reference found"
+              exit 1
+            fi
+          done
+          git diff
+
+      - name: Create pull request
+        id: pr
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          branch: update-devcontainer-image
+          delete-branch: true
+          commit-message: update devcontainer image to ${{ needs.build.outputs.image }}
+          title: update devcontainer image to ${{ needs.build.outputs.image }}
+          body: |
+            - neues Image: `${{ needs.build.outputs.image }}`
+            - aktualisiert `.github/workflows/ci.yml` und `.devcontainer/devcontainer.json`
+
+      - name: Run CI on update branch
+        if: steps.pr.outputs.pull-request-operation == 'created' || steps.pr.outputs.pull-request-operation == 'updated'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run ci.yml --ref update-devcontainer-image
