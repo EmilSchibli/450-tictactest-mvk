@@ -10,6 +10,9 @@ jobs:
   image:
     name: Build image
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -40,3 +43,15 @@ jobs:
           IMAGE: ${{ steps.vars.outputs.image }}
         run: |
           docker run --rm "$IMAGE" sh -c 'java -version && gradle --version && test "$(id -u dev):$(id -g dev)" = 1000:1000'
+
+      - name: Log in to GHCR
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push
+        env:
+          IMAGE: ${{ steps.vars.outputs.image }}
+        run: docker push "$IMAGE"
