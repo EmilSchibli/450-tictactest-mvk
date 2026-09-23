@@ -1,8 +1,6 @@
 {
 	"name": "tictactest-m450",
-	"build": {
-		"dockerfile": "Dockerfile"
-	},
+	"image": "ghcr.io/emilschibli/tictactest-m450:008d3c562ae063bdc61af0458a24bceb60e55932",
 	"remoteUser": "dev",
 	"mounts": [
 		"source=tictactest-m450-gradle,target=/home/dev/.gradle,type=volume"
