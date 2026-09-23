@@ -61,3 +61,12 @@ Ablauf im Workflow `.github/workflows/devcontainer.yml`:
 - Manuell auf `main` starten: ist die Version schon freigegeben, wird nichts neu gebaut.
 
 Branch-Builds kommen nie in die Registry. CI und DevContainer verwenden nur freigegebene `vX.Y.Z` Tags.
+
+## Welches Image verwendet wird
+
+Das verwendete Image steht nur an einer Stelle: `image` in `.devcontainer/devcontainer.json`.
+
+- Lokal startet der DevContainer direkt dieses Image, es wird nichts selbst gebaut.
+- `ci.yml` liest das Image im Job `Read image` aus `devcontainer.json` und startet damit Build, Tests und PIT.
+
+So laufen CI und lokale Umgebung immer mit dem gleichen Image. Wer das Dockerfile lokal testen will, baut es wie oben von Hand.
