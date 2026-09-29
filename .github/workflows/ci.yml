@@ -13,7 +13,7 @@ jobs:
     name: Build
     runs-on: ubuntu-24.04
     container:
-      image: ghcr.io/emilschibli/tictactest-m450:008d3c562ae063bdc61af0458a24bceb60e55932
+      image: ghcr.io/emilschibli/tictactest-m450:v1.0.0
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -32,7 +32,7 @@ jobs:
     needs: build
     runs-on: ubuntu-24.04
     container:
-      image: ghcr.io/emilschibli/tictactest-m450:008d3c562ae063bdc61af0458a24bceb60e55932
+      image: ghcr.io/emilschibli/tictactest-m450:v1.0.0
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -67,7 +67,7 @@ jobs:
     needs: build
     runs-on: ubuntu-24.04
     container:
-      image: ghcr.io/emilschibli/tictactest-m450:008d3c562ae063bdc61af0458a24bceb60e55932
+      image: ghcr.io/emilschibli/tictactest-m450:v1.0.0
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
