@@ -28,6 +28,7 @@ jobs:
       packages: write
     outputs:
       version: ${{ steps.vars.outputs.version }}
+      name: ${{ steps.vars.outputs.name }}
       image: ${{ steps.vars.outputs.image }}
       release: ${{ steps.vars.outputs.release }}
     steps:
@@ -72,8 +73,9 @@ jobs:
           IMAGE: ${{ steps.vars.outputs.image }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
-          if out="$(docker buildx imagetools inspect "$IMAGE" 2>&1)"; then
+          if out="$(docker buildx imagetools inspect "$IMAGE" --format '{{ json .Image }}' 2>&1)"; then
             released=true
+            revision="$(jq -r '.config.Labels["org.opencontainers.image.revision"] // ""' <<< "$out")"
           elif grep -q 'not found' <<< "$out"; then
             released=false
           else
@@ -93,8 +95,11 @@ jobs:
               fi
               ;;
             push)
-              echo "::error file=.devcontainer/VERSION::${IMAGE} is already released, bump .devcontainer/VERSION"
-              exit 1
+              if [ "$revision" != "$GITHUB_SHA" ]; then
+                echo "::error file=.devcontainer/VERSION::${IMAGE} is already released, bump .devcontainer/VERSION"
+                exit 1
+              fi
+              echo "::notice::${IMAGE} was already pushed from this commit"
               ;;
             *)
               echo "::notice::${IMAGE} is already released"
@@ -114,6 +119,7 @@ jobs:
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.version=${{ steps.vars.outputs.version }}
+            org.opencontainers.image.revision=${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -140,21 +146,35 @@ jobs:
     if: needs.image.outputs.release == 'true'
     runs-on: ubuntu-24.04
     permissions:
-      actions: write
-      contents: write
+      contents: read
       pull-requests: write
     steps:
+      - name: Check deploy key
+        env:
+          DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+        run: |
+          if [ -z "$DEPLOY_KEY" ]; then
+            echo "::error::secret DEPLOY_KEY is missing"
+            exit 1
+          fi
+
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-      - name: Update image in devcontainer.json
+      - name: Update image
         env:
+          NAME: ${{ needs.image.outputs.name }}
           IMAGE: ${{ needs.image.outputs.image }}
         run: |
-          f=.devcontainer/devcontainer.json
-          sed -i -E "s#(\"image\": \")[^\"]+\"#\1${IMAGE}\"#" "$f"
-          if [ "$(jq -er .image "$f")" != "$IMAGE" ]; then
-            echo "::error file=${f}::image was not updated to ${IMAGE}"
+          sed -i -E "s#${NAME}:[A-Za-z0-9._-]+#${IMAGE}#g" .devcontainer/devcontainer.json .github/workflows/*.yml
+          for f in .devcontainer/devcontainer.json .github/workflows/ci.yml; do
+            if ! grep -qF "$IMAGE" "$f"; then
+              echo "::error file=${f}::${IMAGE} not found after update"
+              exit 1
+            fi
+          done
+          if grep -rn "${NAME}:" .devcontainer .github | grep -vF "$IMAGE"; then
+            echo "::error::old image tag still in use"
             exit 1
           fi
           git diff
@@ -163,16 +183,27 @@ jobs:
         id: pr
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
+          ssh-key: ${{ secrets.DEPLOY_KEY }}
           branch: update-devcontainer-image
           delete-branch: true
           commit-message: use devcontainer image v${{ needs.image.outputs.version }}
           title: DevContainer-Image v${{ needs.image.outputs.version }} verwenden
           body: |
             - neues freigegebenes Image: `${{ needs.image.outputs.image }}`
-            - setzt `image` in `.devcontainer/devcontainer.json`, damit CI und lokaler DevContainer die neue Version verwenden
+            - setzt das Image in `.devcontainer/devcontainer.json` und `.github/workflows/ci.yml`
+          reviewers: bernedom, Seismix
 
-      - name: Run CI on update branch
-        if: steps.pr.outputs.pull-request-operation == 'created' || steps.pr.outputs.pull-request-operation == 'updated'
+      - name: Check reviewers
+        if: steps.pr.outputs.pull-request-number != ''
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh workflow run ci.yml --repo "$GITHUB_REPOSITORY" --ref update-devcontainer-image
+          PR: ${{ steps.pr.outputs.pull-request-number }}
+        run: |
+          requested="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR}/requested_reviewers" --jq '.users[].login')"
+          echo "$requested"
+          for r in bernedom Seismix; do
+            if ! grep -qx "$r" <<< "$requested"; then
+              echo "::error::${r} is not requested as reviewer on #${PR}"
+              exit 1
+            fi
+          done
