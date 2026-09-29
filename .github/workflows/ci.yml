@@ -3,34 +3,17 @@ name: CI
 on:
   push:
   pull_request:
-  workflow_dispatch:
 
 permissions:
   contents: read
   packages: read
 
 jobs:
-  image:
-    name: Read image
-    runs-on: ubuntu-24.04
-    outputs:
-      image: ${{ steps.image.outputs.image }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-
-      - name: Read image from devcontainer.json
-        id: image
-        run: |
-          image="$(jq -er .image .devcontainer/devcontainer.json)"
-          echo "image=${image}" >> "$GITHUB_OUTPUT"
-
   build:
     name: Build
-    needs: image
     runs-on: ubuntu-24.04
     container:
-      image: ${{ needs.image.outputs.image }}
+      image: ghcr.io/emilschibli/tictactest-m450:008d3c562ae063bdc61af0458a24bceb60e55932
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -46,10 +29,10 @@ jobs:
 
   test:
     name: Test
-    needs: [image, build]
+    needs: build
     runs-on: ubuntu-24.04
     container:
-      image: ${{ needs.image.outputs.image }}
+      image: ghcr.io/emilschibli/tictactest-m450:008d3c562ae063bdc61af0458a24bceb60e55932
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
@@ -81,10 +64,10 @@ jobs:
 
   mutation:
     name: Mutation tests
-    needs: [image, build]
+    needs: build
     runs-on: ubuntu-24.04
     container:
-      image: ${{ needs.image.outputs.image }}
+      image: ghcr.io/emilschibli/tictactest-m450:008d3c562ae063bdc61af0458a24bceb60e55932
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
