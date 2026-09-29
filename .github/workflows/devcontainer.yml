@@ -160,6 +160,8 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ssh-key: ${{ secrets.DEPLOY_KEY }}
 
       - name: Update image
         env:
@@ -183,7 +185,6 @@ jobs:
         id: pr
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
-          ssh-key: ${{ secrets.DEPLOY_KEY }}
           branch: update-devcontainer-image
           delete-branch: true
           commit-message: use devcontainer image v${{ needs.image.outputs.version }}
