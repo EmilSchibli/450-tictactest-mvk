@@ -192,7 +192,7 @@ jobs:
           body: |
             - neues freigegebenes Image: `${{ needs.image.outputs.image }}`
             - setzt das Image in `.devcontainer/devcontainer.json` und `.github/workflows/ci.yml`
-          reviewers: bernedom, Seismix
+          reviewers: Seismix
 
       - name: Check reviewers
         if: steps.pr.outputs.pull-request-number != ''
@@ -202,7 +202,7 @@ jobs:
         run: |
           requested="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR}/requested_reviewers" --jq '.users[].login')"
           echo "$requested"
-          for r in bernedom Seismix; do
+          for r in Seismix; do
             if ! grep -qx "$r" <<< "$requested"; then
               echo "::error::${r} is not requested as reviewer on #${PR}"
               exit 1
