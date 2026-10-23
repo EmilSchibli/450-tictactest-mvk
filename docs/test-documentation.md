@@ -12,6 +12,9 @@
 - [GreedyPlayerTest.java](https://github.com/EmilSchibli/450-tictactest-mvk/blob/main/src/test/java/ch/bbw/m450/tictactoe/GreedyPlayerTest.java)
 - [HumanPlayerTest.java](https://github.com/EmilSchibli/450-tictactest-mvk/blob/main/src/test/java/ch/bbw/m450/tictactoe/HumanPlayerTest.java)
 - [StoneTest.java](https://github.com/EmilSchibli/450-tictactest-mvk/blob/main/src/test/java/ch/bbw/m450/tictactoe/StoneTest.java)
+- [PerfectPlayerTest.java](https://github.com/EmilSchibli/450-tictactest-mvk/blob/main/src/test/java/ch/bbw/m450/tictactoe/PerfectPlayerTest.java)
+- [PioneerConsoleTest.java](https://github.com/EmilSchibli/450-tictactest-mvk/blob/main/src/test/java/ch/bbw/m450/tictactoe/PioneerConsoleTest.java)
+- [PlayerArchitectureTest.java](https://github.com/EmilSchibli/450-tictactest-mvk/blob/main/src/test/java/ch/bbw/m450/tictactoe/PlayerArchitectureTest.java)
 
 Tests ausführen:
 
@@ -203,14 +206,77 @@ Fixtures: `BoardFixtures` (Test-Boards) · Helper: `BoardTestHelper.toBoard()` /
 | **WHEN** | `stone.opponent()` |
 | **THEN** | `CIRCLE` bzw. `CROSS` |
 
+### 23. `givenBoard_whenPlay_thenBestMove` (PerfectPlayer)
+
+| | |
+|---|---|
+| **GIVEN** | `.OXXX.OO.` als X und als O, `XX.OO....` als X, leeres Board, `XOXXOOOX.` |
+| **WHEN** | `new PerfectPlayer().play(board, color)` |
+| **THEN** | `5`, `8`, `2`, `0`, `8`. Das Board wird nicht verändert |
+
+`.OXXX.OO.` als O: Feld 8 gewinnt unten sofort. Feld 5 ist nur unentschieden, Feld 0 verliert. Greedy würde 0 spielen.
+
+### 24. `givenFullBoard_whenPlay_thenThrows` (PerfectPlayer)
+
+| | |
+|---|---|
+| **GIVEN** | volles Board `XOXXOOOXX` |
+| **WHEN** | `play` |
+| **THEN** | `IllegalStateException` mit Text `cannot play at all` |
+
+### 25. `givenTwoPerfectPlayers_whenPlay_thenDraw`
+
+| | |
+|---|---|
+| **GIVEN** | zwei `PerfectPlayer` |
+| **WHEN** | `play(x, o)` |
+| **THEN** | `null`, Ausgabe enthält `it's a draw!` |
+
+### 26. `givenPerfectAgainstGreedy_whenPlay_thenPerfectWins`
+
+| | |
+|---|---|
+| **GIVEN** | Perfect gegen Greedy, einmal als X und einmal als O |
+| **WHEN** | `play` |
+| **THEN** | X gewinnt als Perfect (`CROSS`), O gewinnt als Perfect (`CIRCLE`) |
+
+### 27. `givenStdIn_whenHumanPlays_thenMoveAndPrompt` (Pioneer)
+
+| | |
+|---|---|
+| **GIVEN** | `@StdIo({ "4" })` |
+| **WHEN** | `HumanPlayer.play` |
+| **THEN** | Zug `4`, Ausgabe enthält `where to to put the next CROSS?` |
+
+### 28. `givenTwoGreedyPlayers_whenPlay_thenWinnerOnStdOut` (Pioneer)
+
+| | |
+|---|---|
+| **GIVEN** | zwei `GreedyPlayer`, stdout über `@StdIo` |
+| **WHEN** | `play` |
+| **THEN** | `CROSS`, Ausgabe enthält `winner is: CROSS` |
+
+### 29. `givenPlayerPackage_whenChecked_thenClassesImplementTicTacToePlayer` (ArchUnit)
+
+| | |
+|---|---|
+| **GIVEN** | Package `ch.bbw.m450.tictactoe.players` |
+| **WHEN** | ArchUnit-Regel |
+| **THEN** | genau 3 Klassen, alle implementieren `TicTacToePlayer` |
+
 ---
 
 ## Coverage und Mutation Score
 
-| | vorher | nachher |
-| --- | --- | --- |
-| JaCoCo Instructions | 34.4 % (129/375) | 96.8 % (363/375) |
-| JaCoCo Branches | 34.6 % (27/78) | 100 % (78/78) |
-| PIT Mutation Score | 25 % (14/57) | 100 % (57/57) |
+Gemessen mit `.\gradlew.bat test jacocoTestReport jacocoTestCoverageVerification` und `.\gradlew.bat pitest`.
 
-Nicht abgedeckt ist nur `main(...)` (und der leere Konstruktor von `TicTacToeMain`).
+| | vorher | jetzt |
+| --- | --- | --- |
+| JaCoCo Instructions | 34.4 % (129/375) | 97.6 % (485/497) |
+| JaCoCo Branches | 34.6 % (27/78) | 100 % (100/100) |
+| JaCoCo Lines | | 96.1 % (74/77) |
+| PIT Mutation Score | 25 % (14/57) | 100 % (76/76) |
+
+Vor dem PerfectPlayer standen hier 96.8 % Instructions (363/375), 100 % Branches (78/78) und PIT 100 % (57/57).
+
+Nicht abgedeckt sind `TicTacToeMain.main` (2 Zeilen) und der leere Konstruktor (1 Zeile). Branches fehlen keine. Die Verification in `build.gradle` verlangt mindestens 90 % Branches.

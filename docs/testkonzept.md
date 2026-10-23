@@ -31,8 +31,10 @@ CI: GitHub Actions (siehe Abschnitt 8)
 - `toString` (X, O und leere Felder)
 - Spielschleife `play(...)`: Sieg X, Sieg O, Unentschieden, ungültige Züge, gleicher Spieler
 - `GreedyPlayer` (erstes freies Feld, volles Board)
-- `HumanPlayer` mit `System.setIn` (Zahl und ungültige Eingabe)
+- `HumanPlayer` mit `System.setIn` (Zahl und ungültige Eingabe) und mit Pioneer (`@StdIo`, eine Zeile)
 - `Stone.opponent()`
+- `PerfectPlayer`: sofortiger Gewinn, nicht der erste freie Platz, leeres Board, volles Board, Sieg gegen `GreedyPlayer`, zwei Perfect enden unentschieden
+- ein ArchUnit-Beispiel: jede Klasse in `players` implementiert `TicTacToePlayer`
 
 Board-Darstellung in den Tests: 9 Zeichen, Index 0 bis 8.
 
@@ -48,8 +50,7 @@ Board-Darstellung in den Tests: 9 Zeichen, Index 0 bis 8.
 
 ### Wird nicht getestet (noch)
 
-- `main(...)`: startet ein Spiel mit `HumanPlayer`, der pro Zug einen neuen `Scanner` auf `System.in` macht. Mehrere Eingaben hintereinander gehen so nicht sauber.
-- ein späterer Perfect Player
+- `main(...)`: startet ein Spiel mit `HumanPlayer`, der pro Zug einen neuen `Scanner` auf `System.in` macht. Der erste `Scanner` liest den ganzen Puffer. Mehrere Züge hintereinander über stdin gehen so nicht. Eine einzelne Eingabe testet Pioneer.
 
 Kein Mocking. Mockito ist in der Aufgabe nicht erlaubt.
 
@@ -75,13 +76,15 @@ Die `play`-Tests laufen ein ganzes Spiel mit zwei Spielern durch. Die Spieler si
 
 | Tool | Version / Hinweis | Wozu |
 | --- | --- | --- |
-| Java | 25 (Temurin) | Sprache, in Gradle und CI gleich |
+| Java | 25 (Zulu) | Sprache. Im DevContainer-Image und in der Coverage-CI |
 | JUnit Jupiter | 6.1.3 | Tests schreiben und ausführen |
-| AssertJ | 3.27.7 | Lesbare Assertions (`assertThat(...).isEqualTo(...)`) |
-| Gradle | Wrapper im Repo | `assemble` und `test` |
+| AssertJ | 3.27.7 | Lesbare Assertions (`assertThat(...).isEqualTo(...)`, `contains`, `hasLineCount`) |
+| JUnit Pioneer | 2.3.0 | StdIn/StdOut. Neueste Release auf Maven Central, läuft hier mit JUnit 6 |
+| ArchUnit | 1.5.1 | Selbst gewähltes Framework, ein Beispieltest |
+| Gradle | Wrapper im Repo | `assemble`, `test`, `pitest` |
 | GitHub Actions | `.github/workflows/ci.yml` | Automatisch bauen und testen |
-| JaCoCo | Gradle-Plugin | Code Coverage |
-| PIT | 1.30.0 (Gradle-Plugin 1.19.0, junit5-Plugin 1.2.3) | Mutation Testing (siehe Abschnitt 10) |
+| JaCoCo | 0.8.15 | Report und Verification: unter 90 % Branch-Coverage wird der Build rot |
+| PIT | 1.30.1 (Gradle-Plugin 1.19.0, junit5-Plugin 1.2.3) | Mutation Testing (siehe Abschnitt 10) |
 
 Kein Mockito.
 
@@ -119,7 +122,16 @@ Falsche Länge oder unbekannte Zeichen werfen eine Exception.
 Parameterized Test für `isWin` (Layout, Farbe und erwartetes Ergebnis aus `boards()`). Dazu Tests für `toString` und `play`.
 
 **`GreedyPlayerTest`**, **`HumanPlayerTest`**, **`StoneTest`**  
-Tests für die zwei Spieler und `Stone.opponent()`.
+Tests für die zwei ursprünglichen Spieler und `Stone.opponent()`.
+
+**`PerfectPlayerTest`**  
+Minimax-Spieler. Parameterized für konkrete Felder, dazu Unentschieden gegen sich selbst und Sieg gegen `GreedyPlayer`.
+
+**`PioneerConsoleTest`**  
+`@StdIo` setzt stdin und fängt stdout ab. Ein Zug von `HumanPlayer`, und die Gewinnzeile von `play`.
+
+**`PlayerArchitectureTest`**  
+Ein ArchUnit-Test. Er prüft die drei Klassen `HumanPlayer`, `GreedyPlayer` und `PerfectPlayer`.
 
 So bleibt das Board-Layout an einem Ort. Die eigentliche Logik bleibt in `TicTacToeMain`.
 
@@ -197,23 +209,23 @@ Datei: `.github/workflows/ci.yml`
 
 Läuft bei `push` und `pull_request`.
 
-Zwei Jobs, nacheinander:
+Die Jobs laufen im DevContainer-Image aus der GitHub Container Registry. Der Tag ist fest, nicht `latest`. Java 25 kommt aus dem Image.
+
+Drei Jobs:
 
 1. **Build** (`./gradlew assemble --no-daemon`)
-2. **Test** (`./gradlew test --no-daemon`), nur wenn Build durch ist (`needs: build`)
+2. **Test** (`./gradlew test jacocoTestReport jacocoTestCoverageVerification --no-daemon`), nur wenn Build durch ist (`needs: build`)
+3. **Mutation tests** (`./gradlew pitest --no-daemon`), parallel zum Test-Job, auch `needs: build`
 
-Beide Jobs:
+In `build.gradle` hängt `test` die JaCoCo-Tasks an (`finalizedBy`). `jacocoTestCoverageVerification` bricht ab, wenn die Branch-Coverage unter 90 % liegt.
 
-- Ubuntu
-- Checkout
-- JDK 25 (Temurin)
-- Gradle Setup
+Reports als Artefakte, auch wenn der Schritt rot ist (`if: always()`):
 
-Nach den Tests werden die Reports hochgeladen (`build/reports/tests/test/`), auch wenn Tests rot sind (`if: always()`).
+- `test-reports` aus `build/reports/tests/test/`
+- `jacoco-report` aus `build/reports/jacoco/test/html/`
+- `pitest-report` aus `build/reports/pitest/`
 
-Zusätzlich läuft der Job **Mutation tests** (`./gradlew pitest --no-daemon`) parallel zum Test-Job. Der PIT-Report wird als Artefakt `pitest-report` hochgeladen.
-
-Lokal und CI nutzen denselben Gradle-Wrapper. Java-Version ist in `build.gradle` und in der CI gleich (25).
+Lokal und CI nutzen denselben Gradle-Wrapper. Java ist 25.
 
 ---
 
@@ -221,10 +233,11 @@ Lokal und CI nutzen denselben Gradle-Wrapper. Java-Version ist in `build.gradle`
 
 | Thema | Status | Kurz |
 | --- | --- | --- |
-| JaCoCo, Ziel 90 % Line Coverage | erledigt | 93 % Lines, 96.8 % Instructions, 100 % Branches |
-| PIT (Mutation Testing) | erledigt | siehe Abschnitt 10 |
-| HumanPlayer / stdin | erledigt | mit `System.setIn`, ohne Pioneer |
-| Perfect Player | geplant | gibt es noch nicht |
+| JaCoCo, 90 % Branch-Coverage erzwungen | erledigt | 100 % Branches (100/100), 97.6 % Instructions (485/497), 96.1 % Lines (74/77) |
+| PIT (Mutation Testing) | erledigt | 100 % (76/76), siehe Abschnitt 10 |
+| HumanPlayer / stdin | erledigt | Pioneer `@StdIo` und `System.setIn` |
+| Perfect Player | erledigt | `players/PerfectPlayer.java` |
+| zusätzliches Framework | erledigt | ArchUnit 1.5.1, ein Test |
 | Ganze Spielschleife `play` | erledigt | mit Lambda-Spielern |
 | `main(...)` | offen | siehe Abschnitt 2 |
 | Mockito | nicht vorgesehen | Mocking ist nicht erlaubt |
@@ -248,6 +261,7 @@ Konfiguration in `build.gradle`: alle Klassen in `ch.bbw.m450.tictactoe.*`, JUni
 | Stand | Mutanten | getötet | Mutation Score |
 | --- | --- | --- | --- |
 | vorher (nur `isWin`-Tests) | 57 | 14 | 25 % |
-| nachher | 57 | 57 | 100 % |
+| nach den Spieltests, ohne PerfectPlayer | 57 | 57 | 100 % |
+| mit PerfectPlayer (gemessen) | 76 | 76 | 100 % |
 
-Überlebt hatten am Schluss noch: entfernte `println`-Aufrufe in `play` und `HumanPlayer` und eine vertauschte X/O-Bedingung in `toString`. Dafür prüfen die Tests jetzt auch die Konsolenausgabe (`System.setOut`) und `toString` mit nur X bzw. nur O.
+Überlebt hatten zwischendurch noch: entfernte `println`-Aufrufe in `play` und `HumanPlayer` und eine vertauschte X/O-Bedingung in `toString`. Dafür prüfen die Tests die Konsolenausgabe (`System.setOut` und Pioneer) und `toString` mit nur X bzw. nur O. Der letzte Lauf tötet alle 76 Mutanten, auch die vom `PerfectPlayer`.
