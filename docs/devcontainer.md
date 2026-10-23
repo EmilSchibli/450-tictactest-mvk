@@ -53,7 +53,7 @@ Branch-Builds kommen nie in die Registry. CI und DevContainer verwenden nur frei
 
 ## Automatischer Update-PR
 
-Nach jeder Freigabe öffnet der Job `Create update PR` einen Pull Request auf dem Branch `update-devcontainer-image`. Er setzt den neuen Tag in `.devcontainer/devcontainer.json` und in allen Workflows (`ci.yml`) und fragt `bernedom` und `Seismix` als Reviewer an. Gibt es den PR schon, wird er aktualisiert.
+Nach jeder Freigabe öffnet der Job `Create update PR` einen Pull Request auf dem Branch `update-devcontainer-image`. Er setzt den neuen Tag in `.devcontainer/devcontainer.json` und in allen Workflows (`ci.yml`) und fragt `Seismix` als Reviewer an. Gibt es den PR schon, wird er aktualisiert.
 
 Der Branch wird mit einem Deploy Key (Secret `DEPLOY_KEY`) gepusht. Mit dem `GITHUB_TOKEN` dürfte man keine Workflow-Dateien ändern und die CI würde auf dem PR nicht starten.
 
