@@ -4,35 +4,18 @@ import static ch.bbw.m450.tictactoe.BoardFixtures.EMPTY;
 import static ch.bbw.m450.tictactoe.BoardFixtures.FULL_DRAW;
 import static ch.bbw.m450.tictactoe.BoardTestHelper.toBoard;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-import java.nio.charset.StandardCharsets;
-
 import org.assertj.core.api.WithAssertions;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junitpioneer.jupiter.StdIo;
+import org.junitpioneer.jupiter.StdOut;
 
 import ch.bbw.m450.tictactoe.TicTacToePlayer.Stone;
 import ch.bbw.m450.tictactoe.players.GreedyPlayer;
 import ch.bbw.m450.tictactoe.players.PerfectPlayer;
 
 class PerfectPlayerTest implements WithAssertions {
-
-	private final PrintStream originalOut = System.out;
-	private final ByteArrayOutputStream out = new ByteArrayOutputStream();
-
-	@BeforeEach
-	void captureOut() {
-		System.setOut(new PrintStream(out, true, StandardCharsets.UTF_8));
-	}
-
-	@AfterEach
-	void restoreOut() {
-		System.setOut(originalOut);
-	}
 
 	@ParameterizedTest
 	@CsvSource({
@@ -57,9 +40,10 @@ class PerfectPlayerTest implements WithAssertions {
 	}
 
 	@Test
-	void givenTwoPerfectPlayers_whenPlay_thenDraw() {
+	@StdIo
+	void givenTwoPerfectPlayers_whenPlay_thenDraw(StdOut out) {
 		assertThat(TicTacToeMain.play(new PerfectPlayer(), new PerfectPlayer())).isNull();
-		assertThat(out.toString(StandardCharsets.UTF_8)).contains("it's a draw!");
+		assertThat(out.capturedString()).contains("it's a draw!");
 	}
 
 	@Test

@@ -22,6 +22,13 @@ class PioneerConsoleTest implements WithAssertions {
 	}
 
 	@Test
+	@StdIo({ "abc" })
+	void givenTextInput_whenHumanPlays_thenThrows() {
+		assertThatExceptionOfType(NumberFormatException.class)
+				.isThrownBy(() -> new HumanPlayer().play(toBoard(EMPTY), Stone.CROSS));
+	}
+
+	@Test
 	@StdIo
 	void givenTwoGreedyPlayers_whenPlay_thenWinnerOnStdOut(StdOut out) {
 		assertThat(TicTacToeMain.play(new GreedyPlayer(), new GreedyPlayer())).isEqualTo(Stone.CROSS);

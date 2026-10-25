@@ -16,42 +16,22 @@ import static ch.bbw.m450.tictactoe.BoardTestHelper.isWin;
 import static ch.bbw.m450.tictactoe.BoardTestHelper.toBoard;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.stream.Stream;
 
 import org.assertj.core.api.WithAssertions;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.junitpioneer.jupiter.StdIo;
+import org.junitpioneer.jupiter.StdOut;
 
 import ch.bbw.m450.tictactoe.TicTacToePlayer.Stone;
 import ch.bbw.m450.tictactoe.players.GreedyPlayer;
 
 class TicTacToeMainTest implements WithAssertions {
-
-	private final PrintStream originalOut = System.out;
-	private final ByteArrayOutputStream out = new ByteArrayOutputStream();
-
-	@BeforeEach
-	void captureOut() {
-		System.setOut(new PrintStream(out, true, StandardCharsets.UTF_8));
-	}
-
-	@AfterEach
-	void restoreOut() {
-		System.setOut(originalOut);
-	}
-
-	private String output() {
-		return out.toString(StandardCharsets.UTF_8);
-	}
 
 	static Stream<Arguments> boards() {
 		return Stream.of(
@@ -102,19 +82,21 @@ class TicTacToeMainTest implements WithAssertions {
 	}
 
 	@Test
-	void givenTwoGreedyPlayers_whenPlay_thenCrossWins() {
+	@StdIo
+	void givenTwoGreedyPlayers_whenPlay_thenCrossWins(StdOut out) {
 		assertThat(TicTacToeMain.play(new GreedyPlayer(), new GreedyPlayer())).isEqualTo(Stone.CROSS);
-		assertThat(output()).contains("winner is: CROSS");
+		assertThat(out.capturedString()).contains("winner is: CROSS");
 	}
 
 	@Test
-	void givenDrawMoves_whenPlay_thenNull() {
+	@StdIo
+	void givenDrawMoves_whenPlay_thenNull(StdOut out) {
 		var xMoves = List.of(0, 2, 3, 7, 8).iterator();
 		var oMoves = List.of(1, 4, 5, 6).iterator();
 		TicTacToePlayer x = (board, color) -> xMoves.next();
 		TicTacToePlayer o = (board, color) -> oMoves.next();
 		assertThat(TicTacToeMain.play(x, o)).isNull();
-		assertThat(output()).contains("it's a draw!");
+		assertThat(out.capturedString()).contains("it's a draw!");
 	}
 
 	@Test
@@ -147,11 +129,12 @@ class TicTacToeMainTest implements WithAssertions {
 
 	@ParameterizedTest
 	@ValueSource(ints = { -1, 9 })
-	void givenOutOfBoardMove_whenPlay_thenThrows(int move) {
+	@StdIo
+	void givenOutOfBoardMove_whenPlay_thenThrows(int move, StdOut out) {
 		TicTacToePlayer x = (board, color) -> move;
 		assertThatIllegalStateException().isThrownBy(() -> TicTacToeMain.play(x, new GreedyPlayer()))
 				.withMessageContaining(String.valueOf(move));
-		assertThat(output()).isEqualTo(TicTacToeMain.toString(toBoard(EMPTY)) + System.lineSeparator());
+		assertThat(out.capturedString()).isEqualTo(TicTacToeMain.toString(toBoard(EMPTY)) + System.lineSeparator());
 	}
 
 	@Test
