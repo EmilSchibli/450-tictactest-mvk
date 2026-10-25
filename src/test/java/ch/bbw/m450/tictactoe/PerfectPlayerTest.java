@@ -22,6 +22,7 @@ class PerfectPlayerTest implements WithAssertions {
 			".OXXX.OO., CROSS, 5",
 			".OXXX.OO., CIRCLE, 8",
 			"XX.OO...., CROSS, 2",
+			"O...XX..., CIRCLE, 3",
 			EMPTY + ", CROSS, 0",
 			"XOXXOOOX., CROSS, 8"
 	})
@@ -47,8 +48,10 @@ class PerfectPlayerTest implements WithAssertions {
 	}
 
 	@Test
-	void givenPerfectAgainstGreedy_whenPlay_thenPerfectWins() {
+	@StdIo
+	void givenPerfectAgainstGreedy_whenPlay_thenPerfectWins(StdOut out) {
 		assertThat(TicTacToeMain.play(new PerfectPlayer(), new GreedyPlayer())).isEqualTo(Stone.CROSS);
 		assertThat(TicTacToeMain.play(new GreedyPlayer(), new PerfectPlayer())).isEqualTo(Stone.CIRCLE);
+		assertThat(out.capturedString()).contains("winner is: CROSS", "winner is: CIRCLE");
 	}
 }

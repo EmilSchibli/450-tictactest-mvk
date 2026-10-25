@@ -14,11 +14,11 @@ Prüft `isWin`, `toString` und `play`.
 - `givenCircle_whenToString_thenShowsO`: Feld 0 ist ein fettes O.
 - `givenTwoGreedyPlayers_whenPlay_thenCrossWins`: zwei Greedy, Sieger ist CROSS, stdout enthält `winner is: CROSS`.
 - `givenDrawMoves_whenPlay_thenNull`: feste Zuglisten, Rückgabe `null`, stdout enthält `it's a draw!`.
-- `givenCircleMoves_whenPlay_thenCircleWins`: Kreis belegt 3, 4 und 5 und gewinnt.
-- `givenPlayers_whenPlay_thenEachGetsOwnColor`: erster Aufruf mit CROSS, zweiter mit CIRCLE.
+- `givenCircleMoves_whenPlay_thenCircleWins`: Kreis belegt 3, 4 und 5 und gewinnt, stdout enthält `winner is: CIRCLE`.
+- `givenPlayers_whenPlay_thenEachGetsOwnColor`: erster Spieler bekommt immer CROSS, zweiter immer CIRCLE; Sieger ist CROSS.
 - `givenSamePlayer_whenPlay_thenThrows`: dasselbe Objekt zweimal wirft `IllegalArgumentException`.
 - `givenOutOfBoardMove_whenPlay_thenThrows`: Zug -1 oder 9 wirft, stdout ist das leere Board.
-- `givenOccupiedField_whenPlay_thenThrows`: beide spielen Feld 0, `IllegalStateException`.
+- `givenOccupiedField_whenPlay_thenThrows`: beide spielen Feld 0, Meldung `cannot play to position 0`, stdout ist das Board mit X auf 0.
 
 ## GreedyPlayerTest
 
@@ -35,18 +35,17 @@ Prüft, dass immer das erste freie Feld genommen wird.
 
 Prüft den besten Zug und ganze Partien.
 
-- `givenBoard_whenPlay_thenBestMove`: der Index stimmt (Gewinn, Block, leeres Board, letztes Feld) und das Board bleibt gleich.
+- `givenBoard_whenPlay_thenBestMove`: der Index stimmt (eigener Gewinn, Gegner blocken, leeres Board, letztes Feld) und das Board bleibt gleich.
 - `givenFullBoard_whenPlay_thenThrows`: Meldung `cannot play at all`.
 - `givenTwoPerfectPlayers_whenPlay_thenDraw`: Rückgabe `null`, stdout enthält `it's a draw!`.
-- `givenPerfectAgainstGreedy_whenPlay_thenPerfectWins`: Perfect gewinnt als Kreuz und als Kreis.
+- `givenPerfectAgainstGreedy_whenPlay_thenPerfectWins`: Perfect gewinnt als Kreuz und als Kreis, beide Siege stehen auf stdout.
 
-## PioneerConsoleTest
+## HumanPlayerTest
 
-`HumanPlayer` und die Gewinnzeile über Pioneer `@StdIo`.
+`HumanPlayer` liest von stdin, Eingabe über Pioneer `@StdIo`.
 
 - `givenStdIn_whenHumanPlays_thenMoveAndPrompt`: Eingabe `4` ergibt Zug 4, stdout enthält `where to to put the next CROSS?`.
 - `givenTextInput_whenHumanPlays_thenThrows`: Eingabe `abc` wirft `NumberFormatException`.
-- `givenTwoGreedyPlayers_whenPlay_thenWinnerOnStdOut`: stdout enthält `winner is: CROSS`.
 
 ## PlayerArchitectureTest
 

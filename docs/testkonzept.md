@@ -31,17 +31,17 @@ ArchUnit prüft das Paket `players`: genau drei Klassen, und jede implementiert 
 
 ## Werkzeuge
 
-JUnit 5 (`useJUnitPlatform`) und AssertJ (`WithAssertions`). Wiederholte Fälle laufen als `@ParameterizedTest` mit `@MethodSource`, `@CsvSource` oder `@ValueSource`.
+JUnit 6 (`useJUnitPlatform`) und AssertJ (`WithAssertions`). Wiederholte Fälle laufen als `@ParameterizedTest` mit `@MethodSource`, `@CsvSource` oder `@ValueSource`.
 
 Die Boards stehen als Strings in `BoardFixtures` (`X`, `O`, `.` für leer). `BoardTestHelper.toBoard` macht daraus ein `Stone[]`. `BoardTestHelper.isWin` ruft die echte Methode auf.
 
-Stdin und Stdout laufen über JUnit Pioneer. `@StdIo` setzt die Eingabe, `StdOut` fängt die Ausgabe. So braucht `HumanPlayer` keine Tastatur.
+Stdin und Stdout laufen über JUnit Pioneer. `@StdIo` setzt die Eingabe, `StdOut` fängt die Ausgabe. So braucht `HumanPlayer` keine Tastatur. Jeder Test, der eine Partie spielt, fängt die Konsolenausgabe ab und prüft sie.
 
 ## JaCoCo und PIT
 
 JaCoCo 0.8.15 schreibt HTML und XML nach `build/reports/jacoco/test`. `jacocoTestCoverageVerification` hängt an `test` und bricht den Build ab, wenn die Branch-Abdeckung unter 90 % liegt (`counter = BRANCH`, `minimum = 0.9`). Für Instructions gibt es keine Grenze, die Zahl steht nur im Report.
 
-PIT (Pitest 1.30.1) verändert den Bytecode der Klassen `ch.bbw.m450.tictactoe.*` und lässt dieselben Tests dagegen laufen. HTML und XML liegen unter `build/reports/pitest`. Eine Mindestpunktzahl ist im Build nicht gesetzt.
+PIT (Pitest 1.30.1) verändert den Bytecode der Klassen `ch.bbw.m450.tictactoe.*` und lässt dieselben Tests dagegen laufen. HTML und XML liegen unter `build/reports/pitest`. Aktuell werden alle Mutanten gekillt. Eine Mindestpunktzahl ist im Build nicht gesetzt.
 
 ## Nicht getestet
 

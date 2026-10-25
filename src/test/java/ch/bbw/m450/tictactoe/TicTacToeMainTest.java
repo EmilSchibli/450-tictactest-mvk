@@ -100,16 +100,19 @@ class TicTacToeMainTest implements WithAssertions {
 	}
 
 	@Test
-	void givenCircleMoves_whenPlay_thenCircleWins() {
+	@StdIo
+	void givenCircleMoves_whenPlay_thenCircleWins(StdOut out) {
 		var xMoves = List.of(0, 1, 6).iterator();
 		var oMoves = List.of(3, 4, 5).iterator();
 		TicTacToePlayer x = (board, color) -> xMoves.next();
 		TicTacToePlayer o = (board, color) -> oMoves.next();
 		assertThat(TicTacToeMain.play(x, o)).isEqualTo(Stone.CIRCLE);
+		assertThat(out.capturedString()).contains("winner is: CIRCLE");
 	}
 
 	@Test
-	void givenPlayers_whenPlay_thenEachGetsOwnColor() {
+	@StdIo
+	void givenPlayers_whenPlay_thenEachGetsOwnColor(StdOut out) {
 		TicTacToePlayer x = (board, color) -> {
 			assertThat(color).isEqualTo(Stone.CROSS);
 			return new GreedyPlayer().play(board, color);
@@ -118,7 +121,8 @@ class TicTacToeMainTest implements WithAssertions {
 			assertThat(color).isEqualTo(Stone.CIRCLE);
 			return new GreedyPlayer().play(board, color);
 		};
-		TicTacToeMain.play(x, o);
+		assertThat(TicTacToeMain.play(x, o)).isEqualTo(Stone.CROSS);
+		assertThat(out.capturedString()).contains("winner is: CROSS");
 	}
 
 	@Test
@@ -138,9 +142,12 @@ class TicTacToeMainTest implements WithAssertions {
 	}
 
 	@Test
-	void givenOccupiedField_whenPlay_thenThrows() {
+	@StdIo
+	void givenOccupiedField_whenPlay_thenThrows(StdOut out) {
 		TicTacToePlayer x = (board, color) -> 0;
 		TicTacToePlayer o = (board, color) -> 0;
-		assertThatIllegalStateException().isThrownBy(() -> TicTacToeMain.play(x, o));
+		assertThatIllegalStateException().isThrownBy(() -> TicTacToeMain.play(x, o))
+				.withMessage("cannot play to position 0");
+		assertThat(out.capturedString()).isEqualTo(TicTacToeMain.toString(toBoard("X........")) + System.lineSeparator());
 	}
 }
