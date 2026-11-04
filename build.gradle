@@ -13,6 +13,10 @@ repositories {
 	mavenCentral()
 }
 
+if (version == 'unspecified') {
+	version = '0.0.0-dev'
+}
+
 java {
 	toolchain {
 		languageVersion = JavaLanguageVersion.of(25)
@@ -21,6 +25,12 @@ java {
 
 application {
 	mainClass = 'ch.bbw.m450.tictactoe.TicTacToeMain'
+}
+
+jar {
+	manifest {
+		attributes 'Main-Class': 'ch.bbw.m450.tictactoe.TicTacToeMain'
+	}
 }
 
 run {
