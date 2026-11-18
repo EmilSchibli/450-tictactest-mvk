@@ -6,6 +6,8 @@
 
 build/
 run/
+__pycache__/
+*.pyc
 !**/src/main/**/build/
 !**/src/test/**/build/
 
