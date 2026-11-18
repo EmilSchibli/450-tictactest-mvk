@@ -1,0 +1,30 @@
+#!/bin/sh
+# Pulls the version named in s3://bucket/current. OpenTofu does not know that name.
+set -eu
+bucket="${bucket}"
+region="${region}"
+app=/opt/tictactest/app
+mkdir -p "$app"
+
+ver=$(aws s3 cp "s3://$bucket/current" - --region "$region" | tr -d '[:space:]')
+case "$ver" in
+	*.*.*) ;;
+	*)
+		echo "current is not X.Y.Z: $ver" >&2
+		exit 1
+		;;
+esac
+
+aws s3 cp "s3://$bucket/releases/$ver/tictactest-$ver.jar" "$app/tictactest-$ver.jar" --region "$region"
+aws s3 cp "s3://$bucket/releases/$ver/tictactest-webconsole-$ver.zip" /tmp/tictactest-webconsole.zip --region "$region"
+rm -rf /tmp/tictactest-webconsole
+unzip -qo /tmp/tictactest-webconsole.zip -d /tmp/tictactest-webconsole
+cp /tmp/tictactest-webconsole/webconsole/start-webconsole.sh /tmp/tictactest-webconsole/webconsole/version-server.py "$app/"
+chmod 755 "$app/start-webconsole.sh"
+
+for old in "$app"/tictactest-*.jar; do
+	name=$(basename "$old")
+	if [ "$name" != "tictactest-$ver.jar" ]; then
+		rm -f "$old"
+	fi
+done
