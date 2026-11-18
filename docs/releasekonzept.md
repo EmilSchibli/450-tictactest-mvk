@@ -30,7 +30,7 @@ git push origin v1.0.0
 
 5. `.github/workflows/release.yml` prüft, dass der Tag auf `main` liegt und `X.Y.Z` ist, führt `test` aus (damit auch die 90 % Branch) und baut `./gradlew jar -Pversion=X.Y.Z`.
 6. Der Abschnitt aus `CHANGELOG.md` wird zur Release-Beschreibung. Fehlt er, entsteht kein Release.
-7. GitHub Release `TicTacTest vX.Y.Z` mit dem JAR als Asset.
+7. GitHub Release `TicTacTest vX.Y.Z` mit dem JAR, `tictactest-frontend-X.Y.Z.zip` und `tictactest-webconsole-X.Y.Z.zip`. Die Frontend-Version im Zip ist der Tag. Start und Versionsabfrage: [webkonsole.md](webkonsole.md).
 
 Schlägt ein Test fehl, gibt es kein Release. Der Tag bleibt. Den Fehler auf `main` beheben. Wurde noch nichts veröffentlicht, den Tag löschen und neu setzen. Wurde schon veröffentlicht, eine neue Versionsnummer nehmen.
 

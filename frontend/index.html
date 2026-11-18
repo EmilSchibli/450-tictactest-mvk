@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>TicTacTest</title>
+	<link rel="stylesheet" href="style.css">
+</head>
+<body>
+	<header>
+		<h1>TicTacTest</h1>
+		<p>Mensch gegen den Computer. Ein Zug ist eine Zahl von 0 bis 8 und Enter.</p>
+	</header>
+	<section class="rules">
+		<h2>Feld</h2>
+		<pre class="board">0  1  2
+3  4  5
+6  7  8</pre>
+		<p>0 ist oben links, 8 unten rechts. Nach dem Spiel die Seite neu laden, dann startet eine neue Partie.</p>
+	</section>
+	<section class="versions">
+		<p>Backend <span id="backend-version">…</span></p>
+		<p>Frontend <span id="frontend-version">…</span></p>
+		<p id="status"></p>
+	</section>
+	<iframe id="terminal" title="Spielfeld im Terminal"></iframe>
+	<script src="config.js"></script>
+	<script src="app.js"></script>
+</body>
+</html>

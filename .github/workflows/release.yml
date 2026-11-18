@@ -69,13 +69,29 @@ jobs:
             echo "Änderungen:"
             echo "$notes"
             echo
-            echo "Artefakt: tictactest-${VERSION}.jar"
+            echo "Artefakte:"
+            echo "- tictactest-${VERSION}.jar"
+            echo "- tictactest-frontend-${VERSION}.zip"
+            echo "- tictactest-webconsole-${VERSION}.zip"
           } > release-notes.md
+
+      - name: Package frontend and web console
+        run: |
+          rm -rf release-stage
+          mkdir -p release-stage/frontend release-stage/webconsole
+          cp frontend/index.html frontend/app.js frontend/style.css frontend/config.js release-stage/frontend/
+          printf '%s\n' "$VERSION" > release-stage/frontend/version.txt
+          cp ops/start-webconsole.sh ops/version-server.py release-stage/webconsole/
+          (cd release-stage && zip -r "../tictactest-frontend-${VERSION}.zip" frontend)
+          (cd release-stage && zip -r "../tictactest-webconsole-${VERSION}.zip" webconsole)
 
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" "build/libs/tictactest-${VERSION}.jar" \
+          gh release create "$GITHUB_REF_NAME" \
+            "build/libs/tictactest-${VERSION}.jar" \
+            "tictactest-frontend-${VERSION}.zip" \
+            "tictactest-webconsole-${VERSION}.zip" \
             --title "TicTacTest $GITHUB_REF_NAME" \
             --notes-file release-notes.md

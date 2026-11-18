@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.1.0 - 2026-11-18
+
+### Added
+- Frontend-Archiv und Start der Web-Konsole als Release-Assets
+- Versionsabfrage per HTTP, die Nummer kommt aus dem Jar-Namen des Releases
+
+### Changed
+- Keine Änderung am Spiel
+
+### Fixed
+- Keine
+
 ## 1.0.0 - 2026-11-04
 
 ### Added
