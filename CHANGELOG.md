@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.2.0 - 2026-11-25
+
+### Added
+- Sichtbarer Hinweis im Frontend, dass diese Version in der Cloud läuft
+
+### Changed
+- Keine Änderung am Spiel
+
+### Fixed
+- Keine
+
 ## 1.1.0 - 2026-11-18
 
 ### Added
