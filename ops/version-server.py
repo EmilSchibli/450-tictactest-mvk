@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Serves the running release version as plain text. The game jar is unchanged."""
+"""Serves the running release version as plain text. The game jar is unchanged.
+
+The deploy workflow reads GET /version after a backend release.
+"""
 
 import os
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer

@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.5.0 - 2026-11-25
+
+### Added
+- Keine
+
+### Changed
+- Die Seite nennt dieses Release, und der Versionsdienst beschreibt die Prüfung
+
+### Fixed
+- Keine
+
 ## 1.4.0 - 2026-11-25
 
 ### Added
