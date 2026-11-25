@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.3.0 - 2026-11-25
+
+### Added
+- Keine
+
+### Changed
+- `main` spielt gegen `PerfectPlayer`
+
+### Fixed
+- Keine
+
 ## 1.2.0 - 2026-11-25
 
 ### Added

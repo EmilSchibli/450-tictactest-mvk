@@ -3,18 +3,18 @@ package ch.bbw.m450.tictactoe;
 import java.util.Arrays;
 
 import ch.bbw.m450.tictactoe.TicTacToePlayer.Stone;
-import ch.bbw.m450.tictactoe.players.GreedyPlayer;
 import ch.bbw.m450.tictactoe.players.HumanPlayer;
+import ch.bbw.m450.tictactoe.players.PerfectPlayer;
 
 /**
- * A small tic-tac-toe board. Initially with a human and a primitive but valid computer player.
+ * A small tic-tac-toe board. The released game is a human against PerfectPlayer.
  */
 public class TicTacToeMain {
 
 	public static final int BOARD_SIZE = 9;
 
 	public static void main(String[] args) {
-		play(new HumanPlayer(), new GreedyPlayer());
+		play(new HumanPlayer(), new PerfectPlayer());
 	}
 
 	/**
