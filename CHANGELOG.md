@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.4.0 - 2026-11-25
+
+### Added
+- Keine
+
+### Changed
+- Hintergrund der Seite ist blau
+
+### Fixed
+- Keine
+
 ## 1.3.0 - 2026-11-25
 
 ### Added
