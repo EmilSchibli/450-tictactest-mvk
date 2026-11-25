@@ -1,0 +1,139 @@
+name: Deploy
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Bereits veröffentlichte Version, zum Beispiel 1.2.0
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  changes:
+    name: Changes
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.plan.outputs.version }}
+      backend: ${{ steps.plan.outputs.backend }}
+      frontend: ${{ steps.plan.outputs.frontend }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Decide what to deploy
+        id: plan
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_VERSION: ${{ inputs.version }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          set -eu
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            version=${INPUT_VERSION#v}
+            backend=true
+            frontend=true
+          else
+            version=${RELEASE_TAG#v}
+            plan=$(sh ops/release-changes.sh "$RELEASE_TAG")
+            printf '%s\n' "$plan"
+            backend=$(printf '%s\n' "$plan" | awk -F= '$1=="backend" { print $2 }')
+            frontend=$(printf '%s\n' "$plan" | awk -F= '$1=="frontend" { print $2 }')
+          fi
+          if ! printf '%s\n' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::version must be X.Y.Z"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "backend=$backend" >> "$GITHUB_OUTPUT"
+          echo "frontend=$frontend" >> "$GITHUB_OUTPUT"
+
+      - name: Release assets exist
+        env:
+          VERSION: ${{ steps.plan.outputs.version }}
+          BACKEND: ${{ steps.plan.outputs.backend }}
+          FRONTEND: ${{ steps.plan.outputs.frontend }}
+        run: |
+          set -eu
+          base="https://github.com/EmilSchibli/450-tictactest-mvk/releases/download/v$VERSION"
+          if [ "$BACKEND" = true ]; then
+            curl -fsSL -o /dev/null "$base/tictactest-$VERSION.jar"
+            curl -fsSL -o /dev/null "$base/tictactest-webconsole-$VERSION.zip"
+          fi
+          if [ "$FRONTEND" = true ]; then
+            curl -fsSL -o /dev/null "$base/tictactest-frontend-$VERSION.zip"
+          fi
+
+  backend:
+    name: Backend
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+
+      - name: Session is still valid
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+          AWS_DEFAULT_REGION: ${{ vars.AWS_REGION }}
+        run: aws sts get-caller-identity >/dev/null
+
+      - name: Deploy the release jar
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+          AWS_REGION: ${{ vars.AWS_REGION }}
+          ARTIFACT_BUCKET: ${{ vars.ARTIFACT_BUCKET }}
+          FRONTEND_BUCKET: ${{ vars.FRONTEND_BUCKET }}
+          INSTANCE_ID: ${{ vars.INSTANCE_ID }}
+          VERSION_URL: ${{ vars.VERSION_URL }}
+          FRONTEND_URL: ${{ vars.FRONTEND_URL }}
+        run: sh ops/deploy-release.sh "${{ needs.changes.outputs.version }}" backend
+
+  frontend:
+    name: Frontend
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+
+      - name: Session is still valid
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+          AWS_DEFAULT_REGION: ${{ vars.AWS_REGION }}
+        run: aws sts get-caller-identity >/dev/null
+
+      - name: Deploy the release frontend
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+          AWS_REGION: ${{ vars.AWS_REGION }}
+          ARTIFACT_BUCKET: ${{ vars.ARTIFACT_BUCKET }}
+          FRONTEND_BUCKET: ${{ vars.FRONTEND_BUCKET }}
+          INSTANCE_ID: ${{ vars.INSTANCE_ID }}
+          VERSION_URL: ${{ vars.VERSION_URL }}
+          FRONTEND_URL: ${{ vars.FRONTEND_URL }}
+        run: sh ops/deploy-release.sh "${{ needs.changes.outputs.version }}" frontend
