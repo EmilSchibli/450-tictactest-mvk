@@ -24,7 +24,7 @@ locals {
   ttyd_sha256     = "8a217c968aba172e0dbf3f34447218dc015bc4d5e59bf51db2f2cd12b7be4f55"
 
   fetch_script = templatefile("${path.module}/templates/fetch.sh.tftpl", {
-    bucket = aws_s3_bucket.artifacts.bucket
+    bucket = local.artifact_bucket
     region = var.aws_region
   })
 

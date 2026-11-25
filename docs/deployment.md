@@ -32,6 +32,8 @@ Nicht dort: das Jar, das Startskript, `version-server.py`, SSH-Schlüssel, AWS-Z
 
 Port 80 auf der Instanz bleibt zu. Die Seite kommt von S3.
 
+Die Default-Route-Tabelle im Lab hatte kein Ziel für `0.0.0.0/0`. Ohne die Route zum vorhandenen Internet Gateway kommt die Instanz nicht ins Netz und niemand kommt zu ihr. `aws_route.public` setzt diese Route.
+
 ## Speicher
 
 `t3.micro` hat 1 GB. Jeder Tab startet eine JVM (`-Xmx64m`) plus den Rest der JVM. Zwei bis drei gleichzeitige Partien passen, mehr verdrängt der Speicher.
@@ -63,7 +65,7 @@ tofu apply
 
 Danach existieren Instanz, feste IP und leere Buckets. `config.js` liegt schon im Website-Bucket. Der Dienst ist enabled und startet noch nichts Sinnvolles, weil `current` fehlt.
 
-Blockt das Lab die öffentliche Bucket-Policy, bricht `tofu apply` dort ab. Die Seite muss öffentlich lesbar sein, sonst sieht der Browser sie nicht.
+Das Learner Lab verbietet `s3:GetBucketObjectLockConfiguration`. Die Ressource `aws_s3_bucket` liest das bei jedem Plan und scheitert. Deshalb legt OpenTofu die Buckets mit der AWS-CLI an und verwaltet danach Policy, Website und `config.js`. Die Seite muss öffentlich lesbar sein, sonst sieht der Browser sie nicht.
 
 ## Release von Hand
 

@@ -25,12 +25,12 @@ output "instance_id" {
 
 output "artifact_bucket" {
   description = "Privater Bucket mit Jar und current. Kein Geheimnis, nicht veröffentlichen."
-  value       = aws_s3_bucket.artifacts.bucket
+  value       = local.artifact_bucket
 }
 
 output "frontend_bucket" {
   description = "Oeffentlicher Website-Bucket. Kein Geheimnis."
-  value       = aws_s3_bucket.frontend.bucket
+  value       = local.frontend_bucket
 }
 
 output "aws_region" {

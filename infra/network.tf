@@ -2,6 +2,28 @@ data "aws_vpc" "default" {
   default = true
 }
 
+data "aws_internet_gateway" "default" {
+  filter {
+    name   = "attachment.vpc-id"
+    values = [data.aws_vpc.default.id]
+  }
+}
+
+data "aws_route_table" "main" {
+  vpc_id = data.aws_vpc.default.id
+
+  filter {
+    name   = "association.main"
+    values = ["true"]
+  }
+}
+
+resource "aws_route" "public" {
+  route_table_id         = data.aws_route_table.main.id
+  destination_cidr_block = "0.0.0.0/0"
+  gateway_id             = data.aws_internet_gateway.default.id
+}
+
 data "aws_subnets" "default" {
   filter {
     name   = "vpc-id"
