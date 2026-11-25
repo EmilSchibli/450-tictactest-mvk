@@ -194,7 +194,7 @@ sh ops/deploy-release.sh 1.2.0 frontend
 
 Ohne zweiten Argument deployt das Script beide Teile. Lokal liest es die Ziele aus `tofu output`. In GitHub Actions kommen sie aus Variables. `tofu apply` kommt in der Pipeline nicht vor.
 
-Zuerst `aws sts get-caller-identity`. Schlägt das fehl, schreibt das Script weder `current` noch die Website. Ein abgelaufener Lab-Token macht den Job rot, die laufende Version bleibt.
+Zuerst `aws sts get-caller-identity` und `head-bucket`. Schlägt das fehl, schreibt das Script weder `current` noch die Website. Eine beendete Lab-Session macht den Job rot, bevor eine neue Nummer nach `current` kommt.
 
 Das Backend lädt Jar und Webconsole-Zip aus dem Release, legt sie unter `releases/X.Y.Z/` ab, schreibt `current` zuletzt und startet den Dienst neu. Danach muss `VERSION_URL` genau diese Nummer liefern, sonst ist der Job rot. Das Frontend packt das Frontend-Zip aus, kopiert die `config.js` aus dem Bucket über die Datei aus dem Zip, setzt die Zeitstempel der Dateien auf jetzt und synchronisiert mit `--delete`. `sync` lässt eine gleich grosse Datei liegen, wenn die Kopie im Bucket neuer ist. Genau das passiert bei einem Rollback, deshalb reicht der Zeitstempel aus dem Zip nicht. `version.txt` auf der Website muss die neue Nummer sein.
 
@@ -225,3 +225,24 @@ Es gibt eine Umgebung. `tofu apply`, der SSH-Schlüssel und das Eintragen der La
 Dieselbe Konfiguration dreimal hiesse: ein Name pro Umgebung an Buckets, Instanz und Security Group, und getrennte Variables. Gleich bleiben AMI, Instanztyp, Ports, die Unit und der Deploy-Ablauf. Unterschiedlich sind IP, Instanz-ID, Bucket-Namen und die `config.js`.
 
 Ein Release wird einmal gebaut. Dieselben drei Assets gehen nach dev, dann staging, dann prod. Ein neuer Build pro Umgebung könnte ein anderes Jar ausliefern als das, das den Test bestanden hat. Dev startet bei einem Tag. Staging und prod starten von Hand, prod erst nach einer Required Reviewer-Regel auf der GitHub-Environment. Vor prod muss die Versionsprüfung in staging grün sein. Die Änderungserkennung gilt gegen den letzten Tag, nicht gegen den Stand einer Umgebung. Hinkt prod hinterher, deployt man dort die gewünschte Version vollständig von Hand, nicht nur den Unterschied zum letzten Tag.
+
+## Nachweise
+
+Die Läufe sind vom 25. November 2026.
+
+| Fall | Lauf | Ergebnis |
+|---|---|---|
+| Push auf `main` ohne Tag | [CI zum Workflow-Commit](https://github.com/EmilSchibli/450-tictactest-mvk/actions/runs/45593783224) | CI lief, Deploy nicht |
+| Nur Backend, `v1.3.0` | [Deploy](https://github.com/EmilSchibli/450-tictactest-mvk/actions/runs/45595649161) | Backend grün, Frontend übersprungen. Danach Backend `1.3.0`, Frontend `1.2.0` |
+| Nur Frontend, `v1.4.0` | [Deploy](https://github.com/EmilSchibli/450-tictactest-mvk/actions/runs/45596137170) | Frontend grün, Backend übersprungen. Backend blieb `1.3.0`, Frontend `1.4.0`, Hintergrund `rgb(217, 228, 245)` |
+| Beides, `v1.5.0` | [Deploy](https://github.com/EmilSchibli/450-tictactest-mvk/actions/runs/45598317875) | Beide Jobs grün. Die Seite zeigte den Satz von 1.5.0 und beide Nummern `1.5.0` |
+| Rollback auf `1.2.0` | [erster Versuch](https://github.com/EmilSchibli/450-tictactest-mvk/actions/runs/45597119378), danach [zweiter](https://github.com/EmilSchibli/450-tictactest-mvk/actions/runs/45598080445) | Der erste liess `version.txt` auf `1.4.0`, weil `sync` gleich grosse ältere Dateien überspringt. Nach dem `touch` waren Backend und Frontend `1.2.0`, `config.js` zeigte weiter auf `32.184.161.188` |
+| Abgelaufene Lab-Session | [Deploy 1.6.0](https://github.com/EmilSchibli/450-tictactest-mvk/actions/runs/45598693885) und [erneuter Deploy 1.5.0](https://github.com/EmilSchibli/450-tictactest-mvk/actions/runs/45609380758) | Beide rot mit `AccessDenied` und der Policy `voc-cancel-cred`. Der Upload scheiterte, bevor `current` geschrieben wurde. `version.txt` blieb `1.5.0` |
+
+`v1.3.0` ist der Backend-Release, nicht der erste Tag nach `v1.2.0` in der geplanten Reihenfolge Frontend dann Backend. Zwischen `v1.2.0` und diesem Tag lagen schon die Startskripte. Der erste Tag danach wäre sonst immer auch ein Backend-Deploy gewesen. `v1.4.0` ist danach nur das Frontend.
+
+`v1.6.0` bricht das Startskript mit Absicht ab. Der Lauf ist rot geworden, aber an der abgebrochenen Lab-Session, nicht an der Versionsprüfung. Das Jar kam nicht auf die Instanz. `main` enthält den Abbruch nicht mehr. Der Tag `v1.6.0` enthält ihn noch.
+
+`tofu destroy` und ein neues `apply` sind in dieser Session nicht gelaufen. Die Lab-Session hat die Schlüssel gesperrt und die Instanz gestoppt. `http://32.184.161.188:7682/version` antwortet nicht mehr. Die Website auf S3 antwortet weiter mit Frontend `1.5.0`.
+
+Mit einer neuen Lab-Session: die drei Secrets ersetzen, die Instanz vom Lab starten lassen, `workflow_dispatch` mit `1.5.0`. Danach, wenn die Versionsprüfung eines kaputten Releases noch fehlen soll, einmal `1.6.0` von Hand deployen, den roten Lauf abwarten und wieder `1.5.0` deployen. Nach einem `tofu destroy` und `tofu apply` die Variables `INSTANCE_ID` und `VERSION_URL` auf die neuen Werte setzen und dieselbe Version noch einmal deployen.

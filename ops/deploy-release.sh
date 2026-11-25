@@ -40,6 +40,7 @@ else
 fi
 
 aws sts get-caller-identity --region "$region" >/dev/null
+aws s3api head-bucket --bucket "$bucket" --region "$region"
 
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
