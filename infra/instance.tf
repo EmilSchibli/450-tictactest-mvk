@@ -38,6 +38,7 @@ resource "aws_instance" "web" {
   key_name      = var.key_name
   vpc_security_group_ids = [aws_security_group.web.id]
   iam_instance_profile   = data.aws_iam_instance_profile.lab.name
+  depends_on             = [aws_route.public]
 
   # A new release must not recreate this instance. The version lives in S3, not here.
   user_data_replace_on_change = false

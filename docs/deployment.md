@@ -32,7 +32,7 @@ Nicht dort: das Jar, das Startskript, `version-server.py`, SSH-Schlüssel, AWS-Z
 
 Port 80 auf der Instanz bleibt zu. Die Seite kommt von S3.
 
-Die Default-Route-Tabelle im Lab hatte kein Ziel für `0.0.0.0/0`. Ohne die Route zum vorhandenen Internet Gateway kommt die Instanz nicht ins Netz und niemand kommt zu ihr. `aws_route.public` setzt diese Route.
+Die Default-Route-Tabelle im Lab hatte kein Ziel für `0.0.0.0/0`, obwohl das Internet Gateway schon hing. Ohne `aws_route.public` kommt die Instanz nicht ins Netz: SSH läuft ins Timeout, `dnf` bleibt hängen, SSM registriert sich nicht. Die Instanz hängt von dieser Route ab, damit der erste Start das Netz schon hat.
 
 ## Speicher
 
@@ -94,14 +94,36 @@ tofu -chdir=infra plan
 sh ops/deploy-release.sh 1.2.0
 ```
 
-`tofu plan` darf keine Änderung zeigen. Die Instanz-ID bleibt. Die Seite zeigt die neue Frontend-Version, das Backend die neue Nummer aus dem neuen Jar. Die Maschine wurde nicht neu erstellt.
+Am 25. November 2026 zeigte `tofu plan` keine Änderung. Die Instanz blieb `i-0b6ad65259d45cf83`, die Adresse `184.32.11.203`. `sh ops/deploy-release.sh 1.2.0` lief ohne `tofu apply`. Die Seite zeigte den neuen Satz, Backend `1.2.0` und Frontend `1.2.0`. `config.js` zeigte weiter auf `184.32.11.203`.
 
 ## Teil 4
 
-Diese drei Versuche sind auf diesem Rechner nicht gelaufen. Hier ist kein Learner Lab angemeldet. So müssen sie ausgehen:
+Die Versuche liefen am 25. November 2026 im Learner Lab, Konto `944243916503`, Region `us-west-2`.
 
-1. Session beenden und neu starten. Das Lab stoppt die Instanz und startet sie wieder. Die Elastic IP bleibt, die URL bleibt. systemd startet den Dienst, `fetch.sh` liest dasselbe `current`. Dieselbe Version läuft, ohne Befehl.
+1. Die Lab-Session selbst wurde nicht beendet. Das würde die Zugangsdaten ungültig machen, und die weiteren Versuche wären stehen geblieben. Was die Session mit der Maschine macht, ist Stop und Start. Genau das ist gelaufen, während `1.2.0` aktiv war. Vorher und nachher: Elastic IP `184.32.11.203`, Instanz `i-0b6ad65259d45cf83`. Im gestoppten Zustand zeigte die Adresse dieselbe IP. Nach dem Start antwortete `http://184.32.11.203:7682/version` beim ersten Abruf mit `1.2.0`. Es gab keinen Deploy-Befehl dazwischen. systemd startet den enabled Dienst, `fetch.sh` liest dasselbe `current`.
 
-2. Eine Umgebungsvariable im Unit in `user_data` ändern. `tofu plan` zeigt ein Stop/Start der Instanz, kein Ersatz, weil `user_data_replace_on_change` falsch ist. Die IP bleibt. `current` bleibt, also die Version auch. `user_data` läuft beim zweiten Start nicht noch einmal. Die neue Variable ist auf der bestehenden Instanz deshalb nicht aktiv. Dafür die Unit-Datei von aussen kopieren oder die Instanz wirklich ersetzen. Eine App-Version ändert `user_data` nicht.
+2. In `infra/templates/tictactest.service` stand testweise `Environment=TICTACTEST_NOTE=teil4`. Diese Datei steckt in `user_data`. `tofu plan` dazu:
 
-3. `tofu destroy` und `tofu apply`. Neu sind IP, Instanz-ID und beide Bucket-Namen. `config.js` enthält die neue IP. Die alte Version ist weg, weil der Artefakt-Bucket mit `force_destroy` gelöscht wird. Danach noch einmal `sh ops/deploy-release.sh 1.1.0`. Bis dahin läuft kein Spiel.
+```
+# aws_instance.web will be updated in-place
+id = "i-0b6ad65259d45cf83"
+~ user_data = (alter Hash) -> (neuer Hash)
+~ public_ip = "184.32.11.203" -> (known after apply)
+Plan: 0 to add, 1 to change, 0 to destroy.
+```
+
+Die Elastic IP war nicht im Plan. Die Instanz wird nicht ersetzt, weil `user_data_replace_on_change` falsch ist. Der Plan wurde nicht angewendet, die Zeile ist wieder weg. Adresse und Version blieben `184.32.11.203` und `1.2.0`. `user_data` läuft nur beim ersten Start. Eine angewendete Variable landet in den gespeicherten User Data und erscheint in der laufenden Unit erst, wenn die Unit-Datei neu geschrieben oder die Instanz ersetzt wird. Eine App-Version ändert `user_data` nicht.
+
+3. `tofu destroy` hat 12 Ressourcen gelöscht, danach `tofu apply` 12 neue angelegt.
+
+| | vorher | nachher |
+|---|---|---|
+| öffentliche IP | `184.32.11.203` | `32.184.161.188` |
+| Instanz | `i-0b6ad65259d45cf83` | `i-07c5ac3482c360423` |
+| Elastic IP | `eipalloc-0ad345d94fbf6d340` | `eipalloc-0389c8dcb2300bc40` |
+| Security Group | `sg-0086fe2640d26f645` | `sg-0ec1abcb0427c6720` |
+| Artefakt-Bucket | `tictactest-artifacts-944243916503` | derselbe Name, leerer neuer Bucket |
+| Website-Bucket | `tictactest-frontend-944243916503` | derselbe Name, leerer neuer Bucket |
+| `frontend_url` | unverändert, der Name hängt an der Konto-ID | gleich |
+
+`current`, beide Jars und die Website-Dateien waren weg. `config.js` enthielt die neue IP. Der Dienst war enabled und inactive. `sh ops/deploy-release.sh 1.2.0` hat dieselbe Version wieder hingestellt. Die Seite zeigt Backend `1.2.0` und Frontend `1.2.0`, das Terminal nimmt den Zug `4` an. Bis zu diesem Deploy lief kein Spiel.
