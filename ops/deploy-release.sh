@@ -94,7 +94,8 @@ deploy_frontend() {
 	curl -fsSL -o "$work/frontend.zip" "$base/tictactest-frontend-$version.zip"
 	unzip -q "$work/frontend.zip" -d "$work/front"
 	aws s3 cp "s3://$frontend_bucket/config.js" "$work/front/frontend/config.js" --region "$region"
-	aws s3 sync "$work/front/frontend" "s3://$frontend_bucket/" --delete --region "$region"
+	# An older release has older timestamps. Same-sized files would otherwise stay.
+	aws s3 sync "$work/front/frontend" "s3://$frontend_bucket/" --delete --exact-timestamps --region "$region"
 	front=$(curl -fsS "$frontend_url/version.txt" | tr -d '[:space:]')
 	if [ "$front" != "$version" ]; then
 		echo "frontend is '$front', expected $version" >&2
