@@ -196,7 +196,7 @@ Ohne zweiten Argument deployt das Script beide Teile. Lokal liest es die Ziele a
 
 Zuerst `aws sts get-caller-identity`. Schlägt das fehl, schreibt das Script weder `current` noch die Website. Ein abgelaufener Lab-Token macht den Job rot, die laufende Version bleibt.
 
-Das Backend lädt Jar und Webconsole-Zip aus dem Release, legt sie unter `releases/X.Y.Z/` ab, schreibt `current` zuletzt und startet den Dienst neu. Danach muss `VERSION_URL` genau diese Nummer liefern, sonst ist der Job rot. Das Frontend packt das Frontend-Zip aus, kopiert die `config.js` aus dem Bucket über die Datei aus dem Zip und synchronisiert mit `--delete --exact-timestamps`. Ohne `--exact-timestamps` bleiben gleich grosse Dateien eines älteren Releases liegen, weil ihr Zeitstempel älter ist als der im Bucket. `version.txt` auf der Website muss die neue Nummer sein.
+Das Backend lädt Jar und Webconsole-Zip aus dem Release, legt sie unter `releases/X.Y.Z/` ab, schreibt `current` zuletzt und startet den Dienst neu. Danach muss `VERSION_URL` genau diese Nummer liefern, sonst ist der Job rot. Das Frontend packt das Frontend-Zip aus, kopiert die `config.js` aus dem Bucket über die Datei aus dem Zip, setzt die Zeitstempel der Dateien auf jetzt und synchronisiert mit `--delete`. `sync` lässt eine gleich grosse Datei liegen, wenn die Kopie im Bucket neuer ist. Genau das passiert bei einem Rollback, deshalb reicht der Zeitstempel aus dem Zip nicht. `version.txt` auf der Website muss die neue Nummer sein.
 
 Zwei Läufe teilen sich die Gruppe `deploy`. Der zweite wartet, bis der erste fertig ist.
 
