@@ -182,7 +182,7 @@ v1.1.0  previous=v1.0.0  backend=true   frontend=true
 v1.2.0  previous=v1.1.0  backend=false  frontend=true
 ```
 
-`v1.2.0` hat nur `frontend/index.html` und das Changelog geändert. Das Backend wäre stehen geblieben. Ein Push auf `main` deployt nichts. `.github/workflows/deploy.yml` startet nur, wenn ein GitHub-Release veröffentlicht wird, und zusätzlich von Hand über `workflow_dispatch`.
+`v1.2.0` hat nur `frontend/index.html` und das Changelog geändert. Das Backend wäre stehen geblieben. Ein Push auf `main` deployt nichts. `.github/workflows/deploy.yml` startet bei einem Tag `v*` und von Hand über `workflow_dispatch`. Der Tag stösst zuerst den Release-Workflow an. Der Deploy wartet, bis die Assets dieses Releases abrufbar sind, und lädt genau diese Dateien. Ein Release, das der Release-Workflow mit dem eingebauten Token anlegt, startet in GitHub keinen weiteren Workflow. Deshalb hängt der Deploy am Tag und nicht am Ereignis `release`.
 
 ## Pipeline
 

@@ -1,8 +1,9 @@
 name: Deploy
 
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - 'v*'
   workflow_dispatch:
     inputs:
       version:
@@ -36,7 +37,7 @@ jobs:
         env:
           EVENT_NAME: ${{ github.event_name }}
           INPUT_VERSION: ${{ inputs.version }}
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
           set -eu
           if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
@@ -44,8 +45,8 @@ jobs:
             backend=true
             frontend=true
           else
-            version=${RELEASE_TAG#v}
-            plan=$(sh ops/release-changes.sh "$RELEASE_TAG")
+            version=${REF_NAME#v}
+            plan=$(sh ops/release-changes.sh "$REF_NAME")
             printf '%s\n' "$plan"
             backend=$(printf '%s\n' "$plan" | awk -F= '$1=="backend" { print $2 }')
             frontend=$(printf '%s\n' "$plan" | awk -F= '$1=="frontend" { print $2 }')
@@ -66,13 +67,27 @@ jobs:
         run: |
           set -eu
           base="https://github.com/EmilSchibli/450-tictactest-mvk/releases/download/v$VERSION"
-          if [ "$BACKEND" = true ]; then
-            curl -fsSL -o /dev/null "$base/tictactest-$VERSION.jar"
-            curl -fsSL -o /dev/null "$base/tictactest-webconsole-$VERSION.zip"
-          fi
-          if [ "$FRONTEND" = true ]; then
-            curl -fsSL -o /dev/null "$base/tictactest-frontend-$VERSION.zip"
-          fi
+          ready() {
+            curl -fsSL -o /dev/null "$1"
+          }
+          i=0
+          while [ "$i" -lt 36 ]; do
+            ok=true
+            if [ "$BACKEND" = true ]; then
+              ready "$base/tictactest-$VERSION.jar" || ok=false
+              ready "$base/tictactest-webconsole-$VERSION.zip" || ok=false
+            fi
+            if [ "$FRONTEND" = true ]; then
+              ready "$base/tictactest-frontend-$VERSION.zip" || ok=false
+            fi
+            if [ "$ok" = true ]; then
+              exit 0
+            fi
+            i=$((i + 1))
+            sleep 10
+          done
+          echo "::error::release assets for $VERSION were not published" >&2
+          exit 1
 
   backend:
     name: Backend
