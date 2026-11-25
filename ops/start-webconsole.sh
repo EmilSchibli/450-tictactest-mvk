@@ -2,6 +2,8 @@
 # Starts the released jar in ttyd and a tiny HTTP version endpoint.
 # ttyd itself is installed on the machine. This script only wires the release.
 set -eu
+echo "release 1.6.0 does not start" >&2
+exit 1
 cd "$(dirname "$0")"
 
 jar=${TICTACTEST_JAR:-}

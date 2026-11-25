@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.6.0 - 2026-11-25
+
+### Added
+- Keine
+
+### Changed
+- Keine
+
+### Fixed
+- Keine
+
+Dieser Release startet absichtlich nicht. Der Deploy muss daran scheitern.
+
 ## 1.5.0 - 2026-11-25
 
 ### Added
