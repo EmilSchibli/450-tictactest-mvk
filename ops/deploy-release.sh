@@ -24,12 +24,27 @@ aws s3 cp "$work/tictactest-$version.jar" "s3://$bucket/releases/$version/tictac
 aws s3 cp "$work/webconsole.zip" "s3://$bucket/releases/$version/tictactest-webconsole-$version.zip" --region "$region"
 printf '%s\n' "$version" | aws s3 cp - "s3://$bucket/current" --region "$region"
 
-aws ssm send-command \
+cmd_id=$(aws ssm send-command \
 	--instance-ids "$instance" \
 	--document-name AWS-RunShellScript \
 	--comment "restart tictactest $version" \
 	--parameters '{"commands":["systemctl restart tictactest"]}' \
-	--region "$region"
+	--region "$region" \
+	--query 'Command.CommandId' \
+	--output text | tr -d '\r')
+if ! aws ssm wait command-executed \
+	--command-id "$cmd_id" \
+	--instance-id "$instance" \
+	--region "$region"; then
+	echo "restart $cmd_id failed" >&2
+	aws ssm get-command-invocation \
+		--command-id "$cmd_id" \
+		--instance-id "$instance" \
+		--region "$region" \
+		--query '[Status,StandardOutputContent,StandardErrorContent]' \
+		--output text >&2 || true
+	exit 1
+fi
 
 unzip -q "$work/frontend.zip" -d "$work/front"
 aws s3 cp "s3://$frontend/config.js" "$work/front/frontend/config.js" --region "$region"

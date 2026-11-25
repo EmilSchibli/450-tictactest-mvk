@@ -75,7 +75,7 @@ Release A ist `1.1.0`.
 sh ops/deploy-release.sh 1.1.0
 ```
 
-Das Script lädt nur die drei Assets von GitHub, kopiert Jar und Webconsole-Zip in den privaten Bucket, schreibt `current`, startet den Dienst neu und legt das Frontend hoch. Anschliessend müssen `version_url` und `frontend_url/version.txt` beide `1.1.0` sagen.
+Das Script lädt nur die drei Assets von GitHub, kopiert Jar und Webconsole-Zip in den privaten Bucket, schreibt `current` und startet den Dienst neu. Es wartet, bis der SSM-Befehl fertig ist, und bricht mit der Ausgabe der Instanz ab, wenn der Neustart scheitert. Danach legt es das Frontend hoch. `version_url` und `frontend_url/version.txt` müssen beide `1.1.0` sagen.
 
 Im Browser die `frontend_url` öffnen und eine Partie spielen.
 
@@ -84,6 +84,8 @@ Wenn SSM im Lab verweigert wird, dieselbe Wirkung per SSH:
 ```sh
 ssh -i <privater-schluessel> ec2-user@$(tofu -chdir=infra output -raw public_ip) sudo systemctl restart tictactest
 ```
+
+SSM ist der Weg für die spätere Pipeline. Der Befehl geht über HTTPS, die Instanz nimmt ihn mit `LabInstanceProfile` an. Port 22 bleibt zu, und es liegt kein privater Schlüssel im Workflow. Die Runner-Adresse von GitHub Actions wechselt, deshalb passt sie nicht in `ssh_cidr`. SSH zeigt die Ausgabe direkt und hilft, wenn der Agent noch nicht online ist. Dafür muss der Schlüssel auf dem Rechner liegen, der den Befehl schickt.
 
 ### Zweiter Release, ohne neue Infrastruktur
 

@@ -6,18 +6,15 @@ cd "$(dirname "$0")"
 
 jar=${TICTACTEST_JAR:-}
 if [ -z "$jar" ]; then
-	jar=$(ls -1 tictactest-*.jar | head -n 1)
+	jar=$(ls -1 tictactest-*.jar | sort -V | tail -n 1)
 fi
 version=${jar##*/}
 version=${version#tictactest-}
 version=${version%.jar}
-case "$version" in
-	*.*.*) ;;
-	*)
-		echo "jar name must be tictactest-X.Y.Z.jar, got $jar" >&2
-		exit 1
-		;;
-esac
+if ! printf '%s\n' "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+	echo "jar name must be tictactest-X.Y.Z.jar, got $jar" >&2
+	exit 1
+fi
 
 export TICTACTEST_VERSION="$version"
 bind=${TICTACTEST_BIND:-127.0.0.1}
